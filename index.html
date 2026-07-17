@@ -86,6 +86,14 @@
   .rec{ display:flex; align-items:center; gap:6px; color:var(--magenta); }
   .rec .dot{ width:7px; height:7px; border-radius:50%; background:var(--magenta); animation:blink 1.4s infinite; box-shadow:0 0 8px var(--magenta); }
   @keyframes blink{ 0%,55%{opacity:1;} 56%,100%{opacity:0.15;} }
+  .lang-switch{ display:flex; gap:4px; }
+  .lang-btn{
+    background:transparent; border:1px solid var(--line); color:var(--text-dim);
+    font-family:var(--font-mono); font-size:10.5px; padding:3px 7px; border-radius:2px;
+    cursor:pointer; letter-spacing:0.05em; transition:background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .lang-btn:hover{ color:var(--text); border-color:var(--text-dim); }
+  .lang-btn.active{ background:var(--lime); color:#0a0f0a; border-color:var(--lime); }
 
   /* ---------- INTRO ---------- */
   .intro h1{
@@ -254,6 +262,11 @@
     <span class="cA"></span><span class="cB"></span>
     <div class="topline">
       <span>FPTI // FPV PILOT TYPE INDEX</span>
+      <div class="lang-switch" id="langSwitch">
+        <button class="lang-btn active" data-lang="ko">KO</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="ja">JA</button>
+      </div>
       <span class="rec"><span class="dot"></span>LIVE</span>
     </div>
     <div id="screen"></div>
@@ -261,34 +274,82 @@
 </div>
 
 <script>
+/* ===================== I18N ===================== */
+let LANG = 'ko';
+const T = (o)=> (o && (o[LANG] || o.ko)) || '';
+
+const STR = {
+  ko:{
+    title:"FPTI — FPV 드론 레이싱 파일럿 성향 테스트",
+    introSub:"FPV RACER PERSONALITY",
+    introP:"32개의 실전 상황으로 당신의 레이싱 성향을 5개 축으로 진단합니다. 정답은 없습니다 — 트랙 위에서 순간적으로 드는 생각을 고르세요.",
+    axisLegendRow:(a)=>`<b>${a.A.letter}/${a.B.letter}</b> — ${T(a.name)} (${T(a.A.name)} vs ${T(a.B.name)})`,
+    start:"시작하기 ▶",
+    qTotal:"Q.TOTAL 32",
+    estTime:"EST. 4–6 MIN",
+    prev:"◀ 이전",
+    skip:"건너뛰기 (중립)",
+    resultEyebrow:"RESULT LOCKED — 진단 완료",
+    typeSuffix:"타입",
+    restart:"다시 하기",
+    share:"스크린샷으로 결과 공유 ▶",
+    shareAlert:"이 화면을 캡처해서 공유해보세요! 📸",
+    summaryTpl:(P)=>`트랙 위에서는 <b>${T(P.AL.short)}</b> 방식으로 승부를 보고, 세팅은 <b>${T(P.TF.short)}</b>으로 접근합니다. 연습은 <b>${T(P.GS.short)}</b> 스타일이며, <b>${T(P.QR.short)}</b>으로 훈련하고, <b>${T(P.OH.short)}</b> 코스에서 가장 빛을 발합니다.`,
+  },
+  en:{
+    title:"FPTI — FPV Drone Racing Pilot Type Index",
+    introSub:"FPV RACER PERSONALITY",
+    introP:"32 real racing scenarios diagnose your racing personality across 5 axes. There are no right answers — just pick the thought that hits you first on the track.",
+    axisLegendRow:(a)=>`<b>${a.A.letter}/${a.B.letter}</b> — ${T(a.name)} (${T(a.A.name)} vs ${T(a.B.name)})`,
+    start:"Start ▶",
+    qTotal:"Q.TOTAL 32",
+    estTime:"EST. 4–6 MIN",
+    prev:"◀ Prev",
+    skip:"Skip (Neutral)",
+    resultEyebrow:"RESULT LOCKED — Diagnosis Complete",
+    typeSuffix:"Type",
+    restart:"Restart",
+    share:"Share result via screenshot ▶",
+    shareAlert:"Take a screenshot of this screen to share it! 📸",
+    summaryTpl:(P)=>`On track, you compete in a <b>${T(P.AL.short)}</b> way, and approach tuning like a <b>${T(P.TF.short)}</b>. You practice in a <b>${T(P.GS.short)}</b> style, train as a <b>${T(P.QR.short)}</b>, and shine brightest on <b>${T(P.OH.short)}</b> tracks.`,
+  },
+  ja:{
+    title:"FPTI — FPVドローンレーシング パイロット性格診断",
+    introSub:"FPV RACER PERSONALITY",
+    introP:"32個の実戦シチュエーションで、あなたのレーシング性向を5つの軸で診断します。正解はありません — トラックの上で瞬間的に浮かんだ考えを選んでください。",
+    axisLegendRow:(a)=>`<b>${a.A.letter}/${a.B.letter}</b> — ${T(a.name)} (${T(a.A.name)} vs ${T(a.B.name)})`,
+    start:"スタート ▶",
+    qTotal:"Q.TOTAL 32",
+    estTime:"EST. 4–6 MIN",
+    prev:"◀ 戻る",
+    skip:"スキップ(中立)",
+    resultEyebrow:"RESULT LOCKED — 診断完了",
+    typeSuffix:"タイプ",
+    restart:"もう一度",
+    share:"スクリーンショットで結果をシェア ▶",
+    shareAlert:"この画面をスクリーンショットしてシェアしてみてください！📸",
+    summaryTpl:(P)=>`トラック上では<b>${T(P.AL.short)}</b>なやり方で勝負し、セッティングは<b>${T(P.TF.short)}</b>で取り組みます。練習は<b>${T(P.GS.short)}</b>スタイルで、<b>${T(P.QR.short)}</b>として鍛え、<b>${T(P.OH.short)}</b>コースで一番輝きます。`,
+  },
+};
+
 /* ===================== DATA ===================== */
 
 const AXES = {
-  AL: { name:'공격성', color:'var(--magenta)', hex:'#ff3d6e',
-        A:{letter:'A', name:'어택 Attack', short:'공격적인',
-           desc:'애매한 순간에도 추월을 시도하고, 위험을 감수해서라도 앞으로 나아갑니다. 완벽한 랩보다 승부처를 만드는 그 순간을 즐깁니다.'},
-        B:{letter:'L', name:'라인 Line', short:'정교한',
-           desc:'무리한 추월보다 깨끗한 라인을 우선합니다. 손해를 보더라도 다음 기회, 완벽한 진입 타이밍을 기다리는 편입니다.'} },
-  TF: { name:'세팅', color:'var(--cyan)', hex:'#3de8ff',
-        A:{letter:'T', name:'튜너 Tuner', short:'세팅파',
-           desc:'PID, 레이트, 블랙박스 로그로 원인을 찾고 수치로 세팅을 잡아갑니다. 재현 가능한 좋은 세팅을 신뢰합니다.'},
-        B:{letter:'F', name:'필 Feel', short:'감각파',
-           desc:'숫자보다 손끝의 감각을 믿습니다. 일단 날려보고, 몸에 맞는 느낌으로 세팅을 완성해 갑니다.'} },
-  GS: { name:'연습 스타일', color:'var(--lime)', hex:'#c6ff3d',
-        A:{letter:'G', name:'그라인더 Grinder', short:'그라인더',
-           desc:'같은 구간을 몇 시간이고 반복하며 랩타임을 깎아내는 데서 성취감을 느낍니다. 목표는 명확히 기록입니다.'},
-        B:{letter:'S', name:'스타일 Style', short:'스타일리시한',
-           desc:'반복보다 다양한 시도와 멋진 장면을 즐깁니다. 기록보다 그 순간의 재미와 트릭이 우선입니다.'} },
-  QR: { name:'팀 성향', color:'var(--yellow)', hex:'#ffd23d',
-        A:{letter:'Q', name:'스쿼드 Squad', short:'스쿼드형',
-           desc:'세팅도 공유하고, 연습도 대회 준비도 함께할 때 힘이 나는 타입입니다. 같이 날 때가 가장 즐겁습니다.'},
-        B:{letter:'R', name:'러너 Runner', short:'솔로 러너',
-           desc:'혼자 몰입할 때 가장 즐겁습니다. 세팅도, 연습도, 대회 준비도 스스로 해내는 편입니다.'} },
-  OH: { name:'트랙 취향', color:'var(--purple)', hex:'#b968ff',
-        A:{letter:'O', name:'오픈 Open', short:'오픈 트랙파',
-           desc:'긴 직선과 풀스로틀 구간, 최고속도를 뽐낼 수 있는 넓은 트랙을 가장 좋아합니다.'},
-        B:{letter:'H', name:'하드 Hard', short:'테크니컬파',
-           desc:'연속 게이트와 극한의 컨트롤이 필요한 빡센 기술 코스에서 진짜 실력이 드러난다고 믿습니다.'} }
+  AL: { name:{ko:"공격성",en:"Aggression",ja:"攻撃性"}, color:'var(--magenta)', hex:'#ff3d6e',
+        A:{letter:"A",name:{ko:"어택 Attack",en:"Attack",ja:"アタック(Attack)"},short:{ko:"공격적인",en:"Aggressive",ja:"攻撃的な"},desc:{ko:"애매한 순간에도 추월을 시도하고, 위험을 감수해서라도 앞으로 나아갑니다. 완벽한 랩보다 승부처를 만드는 그 순간을 즐깁니다.",en:"You attempt overtakes even in borderline moments, pushing forward at the risk of a crash. You would rather create a decisive moment than fly a flawless but safe lap.",ja:"際どい瞬間でもオーバーテイクを仕掛け、リスクを負ってでも前に出ます。完璧なラップより、勝負を仕掛ける瞬間を楽しむタイプです。"}},
+        B:{letter:"L",name:{ko:"라인 Line",en:"Line",ja:"ライン(Line)"},short:{ko:"정교한",en:"Precise",ja:"精密な"},desc:{ko:"무리한 추월보다 깨끗한 라인을 우선합니다. 손해를 보더라도 다음 기회, 완벽한 진입 타이밍을 기다리는 편입니다.",en:"You prioritize a clean line over a risky overtake. Even if it costs you a position, you would rather wait for the next chance and a perfect entry.",ja:"無理なオーバーテイクよりクリーンなラインを優先します。多少損をしても、次のチャンスや完璧な進入タイミングを待つタイプです。"}} },
+  TF: { name:{ko:"세팅",en:"Tuning",ja:"セッティング"}, color:'var(--cyan)', hex:'#3de8ff',
+        A:{letter:"T",name:{ko:"튜너 Tuner",en:"Tuner",ja:"チューナー(Tuner)"},short:{ko:"세팅파",en:"Data-driven",ja:"データ派"},desc:{ko:"PID, 레이트, 블랙박스 로그로 원인을 찾고 수치로 세팅을 잡아갑니다. 재현 가능한 좋은 세팅을 신뢰합니다.",en:"You find the cause through PIDs, rates, and blackbox logs, dialing in your setup with numbers. You trust a good setup that is reproducible.",ja:"PID、レート、ブラックボックスログで原因を探り、数値でセッティングを詰めていきます。再現性のある良いセッティングを信頼します。"}},
+        B:{letter:"F",name:{ko:"필 Feel",en:"Feel",ja:"フィール(Feel)"},short:{ko:"감각파",en:"Instinct-driven",ja:"感覚派"},desc:{ko:"숫자보다 손끝의 감각을 믿습니다. 일단 날려보고, 몸에 맞는 느낌으로 세팅을 완성해 갑니다.",en:"You trust your fingertips more than numbers. You just fly it, then finish the setup by feel until it matches your body.",ja:"数字より指先の感覚を信じます。とりあえず飛ばしてみて、体に合う感覚でセッティングを仕上げていきます。"}} },
+  GS: { name:{ko:"연습 스타일",en:"Practice Style",ja:"練習スタイル"}, color:'var(--lime)', hex:'#c6ff3d',
+        A:{letter:"G",name:{ko:"그라인더 Grinder",en:"Grinder",ja:"グラインダー(Grinder)"},short:{ko:"그라인더",en:"Grinder",ja:"グラインダー"},desc:{ko:"같은 구간을 몇 시간이고 반복하며 랩타임을 깎아내는 데서 성취감을 느낍니다. 목표는 명확히 기록입니다.",en:"You feel accomplished grinding the same section for hours, shaving off lap times. Your goal is clearly the record.",ja:"同じ区間を何時間も繰り返し、ラップタイムを削っていくことに達成感を感じます。目標は明確に記録です。"}},
+        B:{letter:"S",name:{ko:"스타일 Style",en:"Style",ja:"スタイル(Style)"},short:{ko:"스타일리시한",en:"Stylish",ja:"スタイリッシュな"},desc:{ko:"반복보다 다양한 시도와 멋진 장면을 즐깁니다. 기록보다 그 순간의 재미와 트릭이 우선입니다.",en:"You enjoy variety and cool moments more than repetition. Fun and tricks in the moment matter more than the record.",ja:"繰り返しよりも多様な挑戦とかっこいい瞬間を楽しみます。記録よりその瞬間の楽しさやトリックが優先です。"}} },
+  QR: { name:{ko:"팀 성향",en:"Team Style",ja:"チーム志向"}, color:'var(--yellow)', hex:'#ffd23d',
+        A:{letter:"Q",name:{ko:"스쿼드 Squad",en:"Squad",ja:"スクワッド(Squad)"},short:{ko:"스쿼드형",en:"Squad type",ja:"スクワッド型"},desc:{ko:"세팅도 공유하고, 연습도 대회 준비도 함께할 때 힘이 나는 타입입니다. 같이 날 때가 가장 즐겁습니다.",en:"You get energized sharing setups, practicing, and prepping for races together. Flying together is when you are happiest.",ja:"セッティングを共有し、練習も大会準備も一緒にする時に力が出るタイプです。一緒に飛ぶ時が一番楽しいです。"}},
+        B:{letter:"R",name:{ko:"러너 Runner",en:"Runner",ja:"ランナー(Runner)"},short:{ko:"솔로 러너",en:"Solo runner",ja:"ソロランナー"},desc:{ko:"혼자 몰입할 때 가장 즐겁습니다. 세팅도, 연습도, 대회 준비도 스스로 해내는 편입니다.",en:"You are happiest immersed on your own. You tend to handle setup, practice, and race prep by yourself.",ja:"一人で没頭している時が一番楽しいです。セッティングも練習も大会準備も自分でこなすタイプです。"}} },
+  OH: { name:{ko:"트랙 취향",en:"Track Preference",ja:"トラック志向"}, color:'var(--purple)', hex:'#b968ff',
+        A:{letter:"O",name:{ko:"오픈 Open",en:"Open",ja:"オープン(Open)"},short:{ko:"오픈 트랙파",en:"Open-track type",ja:"オープントラック派"},desc:{ko:"긴 직선과 풀스로틀 구간, 최고속도를 뽐낼 수 있는 넓은 트랙을 가장 좋아합니다.",en:"You love long straights and full-throttle sections, wide tracks where you can show off top speed.",ja:"長いストレートとフルスロットル区間、最高速度を見せつけられる広いトラックが一番好きです。"}},
+        B:{letter:"H",name:{ko:"하드 Hard",en:"Hard",ja:"ハード(Hard)"},short:{ko:"테크니컬파",en:"Technical type",ja:"テクニカル派"},desc:{ko:"연속 게이트와 극한의 컨트롤이 필요한 빡센 기술 코스에서 진짜 실력이 드러난다고 믿습니다.",en:"You believe your real skill shows on brutal technical courses with consecutive gates and extreme control demands.",ja:"連続ゲートと極限のコントロールが求められる、激しいテクニカルコースでこそ本当の実力が表れると信じています。"}} },
 };
 
 const AXIS_ORDER = ['AL','TF','GS','QR','OH'];
@@ -296,122 +357,80 @@ const AXIS_ORDER = ['AL','TF','GS','QR','OH'];
 function opt(text, score){ return {text, score}; }
 
 const QUESTIONS = [
-  // AL — 7
-  {axis:'AL', type:'scale', text:'앞에 있는 기체의 거리가 애매할 때 나는...', options:[
-    opt('매우 무리해서라도 추월한다.',2), opt('조금 공격적으로 추월한다.',1), opt('상황을 본다.',0),
-    opt('다음 기회를 기다린다.',-1), opt('완벽한 라인을 만든 후 추월한다.',-2)]},
-  {axis:'AL', type:'binary', text:'첫 비행에서 가장 먼저 하는 것은?', options:[
-    opt('한계 속도를 확인한다.',2), opt('코스를 익힌다.',-2)]},
-  {axis:'AL', type:'scale', text:'게이트 진입이 살짝 틀어졌다면?', options:[
-    opt('그대로 밀어 넣는다.',2), opt('멈칫 하고 밀어 넣는다.',1), opt('상황에 따라 다르다.',0),
-    opt('손해를 감수하고 돌려서 넣는다.',-1), opt('전 게이트 부터 다시 들어간다.',-2)]},
-  {axis:'AL', type:'binary', text:'더 재미있는 것은?', options:[
-    opt('최고속도',2), opt('완벽한 라인',-2)]},
-  {axis:'AL', type:'scale', text:'랩타임이 안 나오면', options:[
-    opt('더 공격적으로 날린다.',2), opt('조금 더 공격적으로 날린다.',1), opt('그대로 유지',0),
-    opt('조금 더 안정적으로 탄다.',-1), opt('완전히 라인을 바꾼다.',-2)]},
-  {axis:'AL', type:'binary', text:'결승 마지막 랩 1초차이!', options:[
-    opt('승부수를 던진다.',2), opt('실수를 줄인다.',-2)]},
-  {axis:'AL', type:'scale', text:'추월할 확률이 50%라면?', options:[
-    opt('무조건 시도',2), opt('웬만하면 시도',1), opt('고민',0),
-    opt('웬만하면 안 한다.',-1), opt('절대 안 한다.',-2)]},
-
-  // TF — 7
-  {axis:'TF', type:'scale', text:'새 프레임을 조립했다.', options:[
-    opt('기본세팅으로 블랙박스 확인',2), opt('전에 있던 세팅을 넣는다.',1), opt('그냥 날려본다.',0),
-    opt('느낌을 본다.',-1), opt('아무것도 안 건드린다.',-2)]},
-  {axis:'TF', type:'binary', text:'첫 팩 비행이 이상하다.', options:[
-    opt('블랙박스부터 확인',2), opt('몇 팩 더 날리고 판단',-2)]},
-  {axis:'TF', type:'scale', text:'레이트를 바꿀 때', options:[
-    opt('계산한다.',2), opt('숫자를 참고한다.',1), opt('둘 다',0),
-    opt('느낌을 믿는다.',-1), opt('감으로만 바꾼다.',-2)]},
-  {axis:'TF', type:'binary', text:'좋은 세팅이란', options:[
-    opt('누구나 재현 가능',2), opt('내 손에 맞는 것',-2)]},
-  {axis:'TF', type:'scale', text:'누군가 좋은 PID를 알려줬다.', options:[
-    opt('그대로 테스트',2), opt('비교 테스트',1), opt('참고만',0),
-    opt('내 스타일대로 수정',-1), opt('안 쓴다.',-2)]},
-  {axis:'TF', type:'binary', text:'세팅이 좋아졌다면', options:[
-    opt('원인을 분석한다.',2), opt('그냥 만족한다.',-2)]},
-  {axis:'TF', type:'scale', text:'대회 전날', options:[
-    opt('세팅 수정',2), opt('조금 수정',1), opt('고민',0),
-    opt('거의 안 건드림',-1), opt('절대 안 건드림',-2)]},
-
-  // GS — 6
-  {axis:'GS', type:'scale', text:'30분 연습 시간이 있다면', options:[
-    opt('한 구간만 계속',2), opt('반복 위주',1), opt('반반',0),
-    opt('다양하게',-1), opt('마음대로',-2)]},
-  {axis:'GS', type:'binary', text:'비행 영상을 보면', options:[
-    opt('실수를 찾는다.',2), opt('멋있는 장면을 본다.',-2)]},
-  {axis:'GS', type:'scale', text:'같은 코스를', options:[
-    opt('몇 시간도 가능',2), opt('오래 가능',1), opt('적당히',0),
-    opt('금방 질림',-1), opt('바로 바꿈',-2)]},
-  {axis:'GS', type:'binary', text:'연습 목표', options:[
-    opt('랩타임',2),opt('맛있는 영상',1),opt('무견적!',-1),opt('재미',-2)]},
-  {axis:'GS', type:'scale', text:'새로운 트릭보다', options:[
-    opt('기본기를 더 연습',2), opt('기본기 위주',1), opt('반반',0),
-    opt('기술도 연습',-1), opt('기술이 더 좋다.',-2)]},
-  {axis:'GS', type:'binary', text:'대회가 없더라도', options:[
-    opt('꾸준히 연습',2), opt('기분 날 때만 연습',-2)]},
-
-  // QR — 6
-  {axis:'QR', type:'scale', text:'연습은', options:[
-    opt('항상 같이',2), opt('대부분 같이',1), opt('반반',0),
-    opt('대부분 혼자',-1), opt('항상 혼자',-2)]},
-  {axis:'QR', type:'binary', text:'좋은 세팅을 찾았다.', options:[
-    opt('공유한다.',2), opt('혼자 쓴다.',-2)]},
-  {axis:'QR', type:'scale', text:'충돌 영상을 찍었다.', options:[
-    opt('바로 올린다.',2), opt('친구에게만',1), opt('고민',0),
-    opt('거의 안 올림',-1), opt('절대 안 올림',-2)]},
-  {axis:'QR', type:'binary', text:'새로운 비행 장소를 찾았다.', options:[
-    opt('같이 간다.',2), opt('혼자 간다.',-2)]},
-  {axis:'QR', type:'scale', text:'대회 준비', options:[
-    opt('팀원과 같이',2), opt('대부분 같이',1), opt('반반',0),
-    opt('혼자 준비',-1), opt('완전 혼자',-2)]},
-  {axis:'QR', type:'binary', text:'비행이 가장 즐거운 순간', options:[
-    opt('다 같이 날릴 때',2), opt('혼자 몰입할 때',-2)]},
-
-  // OH — 6
-  {axis:'OH', type:'scale', text:'가장 재미있는 트랙', options:[
-    opt('긴 직선',2), opt('직선이 많음',1), opt('둘 다',0),
-    opt('기술 코스',-1), opt('빡센 기술 코스',-2)]},
-  {axis:'OH', type:'binary', text:'좋아하는 구간', options:[
-    opt('풀스로틀',2), opt('연속 게이트',-2)]},
-  {axis:'OH', type:'scale', text:'더 자신 있는 것은', options:[
-    opt('최고속도',2), opt('속도 유지',1), opt('둘 다',0),
-    opt('정밀한 컨트롤',-1), opt('극한 컨트롤',-2)]},
-  {axis:'OH', type:'binary', text:'연습 장소를 고른다면', options:[
-    opt('넓은 공터',2), opt('장애물이 많은 곳',-2)]},
-  {axis:'OH', type:'scale', text:'가장 짜릿한 순간', options:[
-    opt('최고속도',2), opt('빠른 구간',1), opt('둘 다',0),
-    opt('연속 코너',-1), opt('어려운 구간 클리어',-2)]},
-  {axis:'OH', type:'scale', text:'대회 코스를 선택할 수 있다면', options:[
-    opt('무조건 고속',2), opt('고속 선호',1), opt('상관없음',0),
-    opt('테크니컬 선호',-1), opt('무조건 테크니컬',-2)]},
+  {axis:'AL', type:'scale', text:{ko:"앞에 있는 기체의 거리가 애매할 때 나는...",en:"When the gap to the drone ahead is borderline, I...",ja:"前の機体との距離が微妙な時、自分は…"}, options:[opt({ko:"매우 무리해서라도 추월한다.",en:"Overtake no matter how risky.",ja:"無理をしてでも追い越す。"},2), opt({ko:"조금 공격적으로 추월한다.",en:"Overtake somewhat aggressively.",ja:"少し強引に追い越す。"},1), opt({ko:"상황을 본다.",en:"Assess the situation.",ja:"様子を見る。"},0), opt({ko:"다음 기회를 기다린다.",en:"Wait for the next chance.",ja:"次のチャンスを待つ。"},-1), opt({ko:"완벽한 라인을 만든 후 추월한다.",en:"Build a perfect line first, then overtake.",ja:"完璧なラインを作ってから追い越す。"},-2)]},
+  {axis:'AL', type:'binary', text:{ko:"첫 비행에서 가장 먼저 하는 것은?",en:"What is the first thing you do on a first flight?",ja:"初フライトで最初にすることは?"}, options:[opt({ko:"한계 속도를 확인한다.",en:"Check the top speed limit.",ja:"限界速度を確認する。"},2), opt({ko:"코스를 익힌다.",en:"Learn the course.",ja:"コースを覚える。"},-2)]},
+  {axis:'AL', type:'scale', text:{ko:"게이트 진입이 살짝 틀어졌다면?",en:"If your gate entry is slightly off-line?",ja:"ゲート進入が少しズレたら?"}, options:[opt({ko:"그대로 밀어 넣는다.",en:"Push straight through anyway.",ja:"そのまま押し込む。"},2), opt({ko:"멈칫 하고 밀어 넣는다.",en:"Hesitate a beat, then push through.",ja:"一瞬ためらってから押し込む。"},1), opt({ko:"상황에 따라 다르다.",en:"Depends on the situation.",ja:"状況による。"},0), opt({ko:"손해를 감수하고 돌려서 넣는다.",en:"Accept the loss and re-angle it in.",ja:"損を覚悟して回り込んで入れる。"},-1), opt({ko:"전 게이트 부터 다시 들어간다.",en:"Go back and re-enter from the previous gate.",ja:"前のゲートからやり直す。"},-2)]},
+  {axis:'AL', type:'binary', text:{ko:"더 재미있는 것은?",en:"Which is more fun?",ja:"より楽しいのは?"}, options:[opt({ko:"최고속도",en:"Top speed",ja:"最高速度"},2), opt({ko:"완벽한 라인",en:"A perfect line",ja:"完璧なライン"},-2)]},
+  {axis:'AL', type:'scale', text:{ko:"랩타임이 안 나오면",en:"When your lap time is not improving",ja:"ラップタイムが伸びない時"}, options:[opt({ko:"더 공격적으로 날린다.",en:"Fly more aggressively.",ja:"もっと攻撃的に飛ばす。"},2), opt({ko:"조금 더 공격적으로 날린다.",en:"Fly a bit more aggressively.",ja:"少し攻撃的に飛ばす。"},1), opt({ko:"그대로 유지",en:"Keep it as is.",ja:"そのまま維持する。"},0), opt({ko:"조금 더 안정적으로 탄다.",en:"Fly a bit more safely.",ja:"少し安定して飛ばす。"},-1), opt({ko:"완전히 라인을 바꾼다.",en:"Change the line completely.",ja:"ラインを完全に変える。"},-2)]},
+  {axis:'AL', type:'binary', text:{ko:"결승 마지막 랩 1초차이!",en:"Final lap of the final, only 1 second behind!",ja:"決勝最終ラップ、1秒差!"}, options:[opt({ko:"승부수를 던진다.",en:"Go all-in for the win.",ja:"勝負に出る。"},2), opt({ko:"실수를 줄인다.",en:"Minimize mistakes.",ja:"ミスを減らす。"},-2)]},
+  {axis:'AL', type:'scale', text:{ko:"추월할 확률이 50%라면?",en:"If your odds of a clean overtake are 50/50?",ja:"追い越せる確率が50%なら?"}, options:[opt({ko:"무조건 시도",en:"Go for it, no question.",ja:"絶対に挑戦する。"},2), opt({ko:"웬만하면 시도",en:"Try if reasonably possible.",ja:"できれば挑戦する。"},1), opt({ko:"고민",en:"Think it over.",ja:"悩む。"},0), opt({ko:"웬만하면 안 한다.",en:"Mostly hold back.",ja:"できれば避ける。"},-1), opt({ko:"절대 안 한다.",en:"Never.",ja:"絶対にしない。"},-2)]},
+  {axis:'TF', type:'scale', text:{ko:"새 프레임을 조립했다.",en:"You just built a new frame.",ja:"新しいフレームを組み立てた。"}, options:[opt({ko:"기본세팅으로 블랙박스 확인",en:"Fly stock settings and check the blackbox log.",ja:"基本セッティングでブラックボックスを確認する。"},2), opt({ko:"전에 있던 세팅을 넣는다.",en:"Load your previous setup.",ja:"以前のセッティングを入れる。"},1), opt({ko:"그냥 날려본다.",en:"Just fly it.",ja:"とりあえず飛ばしてみる。"},0), opt({ko:"느낌을 본다.",en:"See how it feels.",ja:"感覚を確かめる。"},-1), opt({ko:"아무것도 안 건드린다.",en:"Do not touch anything.",ja:"何も触らない。"},-2)]},
+  {axis:'TF', type:'binary', text:{ko:"첫 팩 비행이 이상하다.",en:"Something feels off on the first battery pack.",ja:"最初のパックの飛びが変だ。"}, options:[opt({ko:"블랙박스부터 확인",en:"Check the blackbox log first.",ja:"まずブラックボックスを確認する。"},2), opt({ko:"몇 팩 더 날리고 판단",en:"Fly a few more packs before deciding.",ja:"もう数パック飛ばしてから判断する。"},-2)]},
+  {axis:'TF', type:'scale', text:{ko:"레이트를 바꿀 때",en:"When changing your rates",ja:"レートを変える時"}, options:[opt({ko:"계산한다.",en:"I calculate it.",ja:"計算する。"},2), opt({ko:"숫자를 참고한다.",en:"I reference the numbers.",ja:"数値を参考にする。"},1), opt({ko:"둘 다",en:"Both.",ja:"両方。"},0), opt({ko:"느낌을 믿는다.",en:"I trust the feel.",ja:"感覚を信じる。"},-1), opt({ko:"감으로만 바꾼다.",en:"I change it purely by instinct.",ja:"完全に感覚だけで変える。"},-2)]},
+  {axis:'TF', type:'binary', text:{ko:"좋은 세팅이란",en:"A good setup is...",ja:"良いセッティングとは"}, options:[opt({ko:"누구나 재현 가능",en:"One anyone can reproduce.",ja:"誰でも再現できるもの。"},2), opt({ko:"내 손에 맞는 것",en:"One that fits my own hands.",ja:"自分の手に合うもの。"},-2)]},
+  {axis:'TF', type:'scale', text:{ko:"누군가 좋은 PID를 알려줬다.",en:"Someone shared a great PID setup with you.",ja:"誰かに良いPID値を教えてもらった。"}, options:[opt({ko:"그대로 테스트",en:"Test it exactly as-is.",ja:"そのままテストする。"},2), opt({ko:"비교 테스트",en:"Test it side-by-side.",ja:"比較テストする。"},1), opt({ko:"참고만",en:"Just take note.",ja:"参考程度にする。"},0), opt({ko:"내 스타일대로 수정",en:"Tweak it to fit my style.",ja:"自分のスタイルに合わせて修正する。"},-1), opt({ko:"안 쓴다.",en:"Do not use it.",ja:"使わない。"},-2)]},
+  {axis:'TF', type:'binary', text:{ko:"세팅이 좋아졌다면",en:"When your setup improves",ja:"セッティングが良くなったら"}, options:[opt({ko:"원인을 분석한다.",en:"I analyze why.",ja:"原因を分析する。"},2), opt({ko:"그냥 만족한다.",en:"I just enjoy it.",ja:"そのまま満足する。"},-2)]},
+  {axis:'TF', type:'scale', text:{ko:"대회 전날",en:"The night before a race",ja:"大会前日"}, options:[opt({ko:"세팅 수정",en:"Tweak the setup.",ja:"セッティングを修正する。"},2), opt({ko:"조금 수정",en:"Tweak it a little.",ja:"少し修正する。"},1), opt({ko:"고민",en:"Think about it.",ja:"悩む。"},0), opt({ko:"거의 안 건드림",en:"Barely touch it.",ja:"ほとんど触らない。"},-1), opt({ko:"절대 안 건드림",en:"Never touch it.",ja:"絶対に触らない。"},-2)]},
+  {axis:'GS', type:'scale', text:{ko:"30분 연습 시간이 있다면",en:"With 30 minutes of practice time",ja:"30分の練習時間があれば"}, options:[opt({ko:"한 구간만 계속",en:"Drill just one section.",ja:"一区間だけずっと練習する。"},2), opt({ko:"반복 위주",en:"Mostly repetition.",ja:"反復中心。"},1), opt({ko:"반반",en:"Half and half.",ja:"半々。"},0), opt({ko:"다양하게",en:"A variety of things.",ja:"いろいろ試す。"},-1), opt({ko:"마음대로",en:"Whatever feels fun.",ja:"気の向くまま。"},-2)]},
+  {axis:'GS', type:'binary', text:{ko:"비행 영상을 보면",en:"When you watch your flight footage",ja:"フライト映像を見ると"}, options:[opt({ko:"실수를 찾는다.",en:"I look for mistakes.",ja:"ミスを探す。"},2), opt({ko:"멋있는 장면을 본다.",en:"I look for cool moments.",ja:"かっこいいシーンを見る。"},-2)]},
+  {axis:'GS', type:'scale', text:{ko:"같은 코스를",en:"Flying the same course,",ja:"同じコースを"}, options:[opt({ko:"몇 시간도 가능",en:"I can do it for hours.",ja:"何時間でも飛べる。"},2), opt({ko:"오래 가능",en:"I can do it a long while.",ja:"長く飛べる。"},1), opt({ko:"적당히",en:"A moderate while.",ja:"ほどほどに。"},0), opt({ko:"금방 질림",en:"I get bored quickly.",ja:"すぐ飽きる。"},-1), opt({ko:"바로 바꿈",en:"I switch it up right away.",ja:"すぐ変える。"},-2)]},
+  {axis:'GS', type:'binary', text:{ko:"연습 목표",en:"Your practice goal",ja:"練習の目標"}, options:[opt({ko:"랩타임",en:"Lap time",ja:"ラップタイム"},2), opt({ko:"맛있는 영상",en:"A great clip",ja:"映える映像"},1), opt({ko:"무견적!",en:"No plan at all!",ja:"行き当たりばったり!"},-1), opt({ko:"재미",en:"Fun",ja:"楽しさ"},-2)]},
+  {axis:'GS', type:'scale', text:{ko:"새로운 트릭보다",en:"Rather than a new trick,",ja:"新しいトリックより"}, options:[opt({ko:"기본기를 더 연습",en:"I practice fundamentals more.",ja:"基礎をもっと練習する。"},2), opt({ko:"기본기 위주",en:"Mostly fundamentals.",ja:"基礎中心。"},1), opt({ko:"반반",en:"Half and half.",ja:"半々。"},0), opt({ko:"기술도 연습",en:"I practice tricks too.",ja:"技も練習する。"},-1), opt({ko:"기술이 더 좋다.",en:"Tricks are more fun.",ja:"技の方が好き。"},-2)]},
+  {axis:'GS', type:'binary', text:{ko:"대회가 없더라도",en:"Even with no race coming up",ja:"大会がなくても"}, options:[opt({ko:"꾸준히 연습",en:"I practice consistently.",ja:"継続的に練習する。"},2), opt({ko:"기분 날 때만 연습",en:"I only practice when I feel like it.",ja:"気が向いた時だけ練習する。"},-2)]},
+  {axis:'QR', type:'scale', text:{ko:"연습은",en:"I practice...",ja:"練習は"}, options:[opt({ko:"항상 같이",en:"Always with others.",ja:"いつも一緒に。"},2), opt({ko:"대부분 같이",en:"Mostly with others.",ja:"大体一緒に。"},1), opt({ko:"반반",en:"Half and half.",ja:"半々。"},0), opt({ko:"대부분 혼자",en:"Mostly alone.",ja:"大体一人で。"},-1), opt({ko:"항상 혼자",en:"Always alone.",ja:"いつも一人で。"},-2)]},
+  {axis:'QR', type:'binary', text:{ko:"좋은 세팅을 찾았다.",en:"You found a great setup.",ja:"良いセッティングを見つけた。"}, options:[opt({ko:"공유한다.",en:"I share it.",ja:"共有する。"},2), opt({ko:"혼자 쓴다.",en:"I keep it to myself.",ja:"自分だけで使う。"},-2)]},
+  {axis:'QR', type:'scale', text:{ko:"충돌 영상을 찍었다.",en:"You caught a crash on video.",ja:"クラッシュ映像を撮った。"}, options:[opt({ko:"바로 올린다.",en:"Post it right away.",ja:"すぐアップする。"},2), opt({ko:"친구에게만",en:"Only show friends.",ja:"友達にだけ見せる。"},1), opt({ko:"고민",en:"Think about it.",ja:"悩む。"},0), opt({ko:"거의 안 올림",en:"Almost never post it.",ja:"ほとんどアップしない。"},-1), opt({ko:"절대 안 올림",en:"Never post it.",ja:"絶対にアップしない。"},-2)]},
+  {axis:'QR', type:'binary', text:{ko:"새로운 비행 장소를 찾았다.",en:"You found a new flying spot.",ja:"新しいフライトスポットを見つけた。"}, options:[opt({ko:"같이 간다.",en:"Go there together.",ja:"一緒に行く。"},2), opt({ko:"혼자 간다.",en:"Go there alone.",ja:"一人で行く。"},-2)]},
+  {axis:'QR', type:'scale', text:{ko:"대회 준비",en:"Race preparation",ja:"大会準備"}, options:[opt({ko:"팀원과 같이",en:"With teammates.",ja:"チームメイトと一緒に。"},2), opt({ko:"대부분 같이",en:"Mostly together.",ja:"大体一緒に。"},1), opt({ko:"반반",en:"Half and half.",ja:"半々。"},0), opt({ko:"혼자 준비",en:"Mostly alone.",ja:"大体一人で。"},-1), opt({ko:"완전 혼자",en:"Completely alone.",ja:"完全に一人で。"},-2)]},
+  {axis:'QR', type:'binary', text:{ko:"비행이 가장 즐거운 순간",en:"The moment flying is most fun",ja:"フライトが一番楽しい瞬間"}, options:[opt({ko:"다 같이 날릴 때",en:"Flying together with everyone.",ja:"みんなで一緒に飛ばす時。"},2), opt({ko:"혼자 몰입할 때",en:"Being alone in the zone.",ja:"一人で没頭している時。"},-2)]},
+  {axis:'OH', type:'scale', text:{ko:"가장 재미있는 트랙",en:"The most fun track",ja:"一番楽しいトラック"}, options:[opt({ko:"긴 직선",en:"Long straights",ja:"長いストレート"},2), opt({ko:"직선이 많음",en:"Mostly straights",ja:"直線が多い"},1), opt({ko:"둘 다",en:"Both",ja:"両方"},0), opt({ko:"기술 코스",en:"A technical course",ja:"テクニカルコース"},-1), opt({ko:"빡센 기술 코스",en:"A brutal technical course",ja:"激しいテクニカルコース"},-2)]},
+  {axis:'OH', type:'binary', text:{ko:"좋아하는 구간",en:"Your favorite section",ja:"好きな区間"}, options:[opt({ko:"풀스로틀",en:"Full throttle",ja:"フルスロットル"},2), opt({ko:"연속 게이트",en:"Consecutive gates",ja:"連続ゲート"},-2)]},
+  {axis:'OH', type:'scale', text:{ko:"더 자신 있는 것은",en:"You are more confident in...",ja:"より自信があるのは"}, options:[opt({ko:"최고속도",en:"Top speed",ja:"最高速度"},2), opt({ko:"속도 유지",en:"Maintaining speed",ja:"速度の維持"},1), opt({ko:"둘 다",en:"Both",ja:"両方"},0), opt({ko:"정밀한 컨트롤",en:"Precise control",ja:"精密なコントロール"},-1), opt({ko:"극한 컨트롤",en:"Extreme control",ja:"極限のコントロール"},-2)]},
+  {axis:'OH', type:'binary', text:{ko:"연습 장소를 고른다면",en:"If picking a practice spot",ja:"練習場所を選ぶなら"}, options:[opt({ko:"넓은 공터",en:"A wide open field",ja:"広い空き地"},2), opt({ko:"장애물이 많은 곳",en:"A spot full of obstacles",ja:"障害物が多い場所"},-2)]},
+  {axis:'OH', type:'scale', text:{ko:"가장 짜릿한 순간",en:"The most thrilling moment",ja:"一番痺れる瞬間"}, options:[opt({ko:"최고속도",en:"Top speed",ja:"最高速度"},2), opt({ko:"빠른 구간",en:"A fast section",ja:"速い区間"},1), opt({ko:"둘 다",en:"Both",ja:"両方"},0), opt({ko:"연속 코너",en:"Consecutive corners",ja:"連続コーナー"},-1), opt({ko:"어려운 구간 클리어",en:"Clearing a tough section",ja:"難しい区間のクリア"},-2)]},
+  {axis:'OH', type:'scale', text:{ko:"대회 코스를 선택할 수 있다면",en:"If you could choose the race course",ja:"大会コースを選べるなら"}, options:[opt({ko:"무조건 고속",en:"Definitely high-speed",ja:"絶対に高速"},2), opt({ko:"고속 선호",en:"Prefer high-speed",ja:"高速志向"},1), opt({ko:"상관없음",en:"No preference",ja:"どちらでもいい"},0), opt({ko:"테크니컬 선호",en:"Prefer technical",ja:"テクニカル志向"},-1), opt({ko:"무조건 테크니컬",en:"Definitely technical",ja:"絶対にテクニカル"},-2)]},
 ];
-
 /* ===================== STATE ===================== */
 let current = 0;
 const answers = new Array(QUESTIONS.length).fill(null); // score chosen
 const screen = document.getElementById('screen');
+let screenMode = 'intro'; // 'intro' | 'question' | 'result'
+
+function setLang(l){
+  LANG = l;
+  document.documentElement.lang = l;
+  document.title = STR[l].title;
+  document.querySelectorAll('.lang-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.lang===l);
+  });
+  if(screenMode==='intro') renderIntro();
+  else if(screenMode==='question') renderQuestion();
+  else renderResult();
+}
+document.querySelectorAll('.lang-btn').forEach(b=>{
+  b.onclick = ()=> setLang(b.dataset.lang);
+});
 
 /* ===================== RENDER: INTRO ===================== */
 function renderIntro(){
+  screenMode = 'intro';
+  const s = STR[LANG];
   screen.innerHTML = `
     <div class="intro">
-      <div class="sub">FPV RACER PERSONALITY</div>
+      <div class="sub">${s.introSub}</div>
       <h1>FPTI</h1>
-      <p>32개의 실전 상황으로 당신의 레이싱 성향을 5개 축으로 진단합니다. 정답은 없습니다 — 트랙 위에서 순간적으로 드는 생각을 고르세요.</p>
+      <p>${s.introP}</p>
       <div class="axis-legend">
         ${AXIS_ORDER.map(k=>{
           const a = AXES[k];
           return `<div class="row"><span class="swatch" style="background:${a.hex}"></span>
-            <b>${a.A.letter}/${a.B.letter}</b> — ${a.name} (${a.A.name} vs ${a.B.name})</div>`;
+            ${s.axisLegendRow(a)}</div>`;
         }).join('')}
       </div>
-      <button class="btn" id="startBtn">시작하기 ▶</button>
+      <button class="btn" id="startBtn">${s.start}</button>
       <div class="meta-row">
-        <span>Q.TOTAL 32</span>
-        <span>EST. 4–6 MIN</span>
+        <span>${s.qTotal}</span>
+        <span>${s.estTime}</span>
       </div>
     </div>
   `;
@@ -431,30 +450,32 @@ function renderTicks(){
   return `
     <div class="telemetry">
       <div class="ticks">${ticks}</div>
-      <div class="tlabel"><span>Q ${String(current+1).padStart(2,'0')} / ${QUESTIONS.length}</span><span>${AXES[QUESTIONS[current].axis].name.toUpperCase()}</span></div>
+      <div class="tlabel"><span>Q ${String(current+1).padStart(2,'0')} / ${QUESTIONS.length}</span><span>${T(AXES[QUESTIONS[current].axis].name).toUpperCase()}</span></div>
     </div>
   `;
 }
 
 /* ===================== RENDER: QUESTION ===================== */
 function renderQuestion(){
+  screenMode = 'question';
+  const s = STR[LANG];
   const q = QUESTIONS[current];
   const axis = AXES[q.axis];
   screen.style.setProperty('--tag-color', axis.hex);
 
   screen.innerHTML = `
     ${renderTicks()}
-    <div class="qtag" style="--tag-color:${axis.hex}">${q.axis} · ${axis.name}</div>
-    <div class="qtext">${q.text}</div>
+    <div class="qtag" style="--tag-color:${axis.hex}">${q.axis} · ${T(axis.name)}</div>
+    <div class="qtext">${T(q.text)}</div>
     <div class="options">
       ${q.options.map((o,i)=>`
         <button class="opt ${answers[current]===o.score?'selected':''}" data-i="${i}">
-          <span class="idx">${i+1}</span><span>${o.text}</span>
+          <span class="idx">${i+1}</span><span>${T(o.text)}</span>
         </button>`).join('')}
     </div>
     <div class="qfoot">
-      <button class="link-btn" id="prevBtn" ${current===0?'disabled':''}>◀ 이전</button>
-      <button class="link-btn" id="skipBtn">건너뛰기 (중립)</button>
+      <button class="link-btn" id="prevBtn" ${current===0?'disabled':''}>${s.prev}</button>
+      <button class="link-btn" id="skipBtn">${s.skip}</button>
     </div>
   `;
 
@@ -544,44 +565,46 @@ function radarSVG(scores){
 
 /* ===================== RENDER: RESULT ===================== */
 function renderResult(){
+  screenMode = 'result';
+  const s = STR[LANG];
   const scores = computeScores();
   const code = AXIS_ORDER.map(k=>scores[k].letter).join('');
 
   const poleOf = (k)=> scores[k].letter===AXES[k].A.letter ? AXES[k].A : AXES[k].B;
   const P = {}; AXIS_ORDER.forEach(k=> P[k]=poleOf(k));
 
-  const summary = `트랙 위에서는 <b>${P.AL.short}</b> 방식으로 승부를 보고, 세팅은 <b>${P.TF.short}</b>으로 접근합니다. 연습은 <b>${P.GS.short}</b> 스타일이며, <b>${P.QR.short}</b>으로 훈련하고, <b>${P.OH.short}</b> 코스에서 가장 빛을 발합니다.`;
+  const summary = s.summaryTpl(P);
 
   const axisCardsHTML = AXIS_ORDER.map(k=>{
-    const a = AXES[k]; const s = scores[k]; const p = P[k];
-    const pctFromLeft = s.letter===a.A.letter ? s.pct : 100-s.pct;
+    const a = AXES[k]; const sc = scores[k]; const p = P[k];
+    const pctFromLeft = sc.letter===a.A.letter ? sc.pct : 100-sc.pct;
     return `
     <div class="axis-card">
-      <div class="ac-top"><span>${k} · ${a.name}</span><span>${s.raw>0?'+':''}${s.raw} / ±${s.max}</span></div>
-      <div class="ac-name" style="color:${a.hex}">${p.letter} — ${p.name}</div>
+      <div class="ac-top"><span>${k} · ${T(a.name)}</span><span>${sc.raw>0?'+':''}${sc.raw} / ±${sc.max}</span></div>
+      <div class="ac-name" style="color:${a.hex}">${p.letter} — ${T(p.name)}</div>
       <div class="bar-track">
         <div class="bar-fill" style="width:100%; background:linear-gradient(90deg, ${a.hex}55, ${a.hex}11);"></div>
         <div class="bar-dot" style="left:${pctFromLeft}%; background:${a.hex};"></div>
       </div>
-      <div class="ac-poles"><span>${a.A.letter} ${a.A.name.split(' ')[0]}</span><span>${a.B.letter} ${a.B.name.split(' ')[0]}</span></div>
-      <div class="ac-desc">${p.desc}</div>
+      <div class="ac-poles"><span>${a.A.letter} ${T(a.A.short)}</span><span>${a.B.letter} ${T(a.B.short)}</span></div>
+      <div class="ac-desc">${T(p.desc)}</div>
     </div>`;
   }).join('');
 
   screen.innerHTML = `
     <div class="result-head">
-      <div class="result-eyebrow">RESULT LOCKED — 진단 완료</div>
+      <div class="result-eyebrow">${s.resultEyebrow}</div>
       <div class="code-row">
         ${AXIS_ORDER.map(k=>`<div class="code-chip" style="background:${AXES[k].hex}">${scores[k].letter}</div>`).join('')}
       </div>
-      <div class="result-title">${code} 타입</div>
+      <div class="result-title">${code} ${s.typeSuffix}</div>
       <div class="summary">${summary}</div>
     </div>
     <div class="radar-wrap">${radarSVG(scores)}</div>
     <div class="axis-cards">${axisCardsHTML}</div>
     <div class="btn-row">
-      <button class="btn ghost" id="restartBtn">다시 하기</button>
-      <button class="btn" id="rerunBtn">스크린샷으로 결과 공유 ▶</button>
+      <button class="btn ghost" id="restartBtn">${s.restart}</button>
+      <button class="btn" id="rerunBtn">${s.share}</button>
     </div>
     <div class="meta-row">
       <span>FPTI v1.0</span>
@@ -593,7 +616,7 @@ function renderResult(){
     answers.fill(null); current=0; renderIntro();
   };
   document.getElementById('rerunBtn').onclick = ()=>{
-    alert('이 화면을 캡처해서 공유해보세요! 📸');
+    alert(STR[LANG].shareAlert);
   };
 }
 

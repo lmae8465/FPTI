@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FPV PILOT TYPE — 조종석 성향 검사</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#04070a;
+    --panel:#0a1210;
+    --line:#1c3a2c;
+    --osd:#39ff8a;
+    --osd-dim:#1f8a52;
+    --amber:#ffb300;
+    --red:#ff3860;
+    --text:#d7ffe4;
+    --text-dim:#7fae93;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%; overflow-y:auto;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 50% -10%, #0c1a14 0%, var(--bg) 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Share Tech Mono', monospace;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    min-height:100dvh;
+    padding:24px;
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  input, textarea{
+    -webkit-user-select:text;
+    user-select:text;
+    -webkit-touch-callout:default;
+  }
+  .display-font{font-family:'Rajdhani',sans-serif;font-weight:700;}
+
+  .goggle{
+    position:relative;
+    width:min(720px, 94vw, calc(94vh * 4 / 3));
+    aspect-ratio:4/3;
+    background:
+      repeating-linear-gradient(0deg, rgba(57,255,138,0.025) 0px, rgba(57,255,138,0.025) 1px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse at center, #071410 0%, #030503 80%);
+    border-radius:26px;
+    border:2px solid var(--line);
+    box-shadow:
+      0 0 0 1px rgba(57,255,138,0.06),
+      0 30px 80px rgba(0,0,0,0.6),
+      inset 0 0 60px rgba(0,0,0,0.5);
+    overflow:hidden;
+  }
+  .goggle::before{
+    content:"";
+    position:absolute;inset:0;
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent 20%);
+    pointer-events:none;
+  }
+  .scanline{
+    position:absolute; inset:0; pointer-events:none !important; z-index:5;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, transparent 1px, transparent 2px);
+    mix-blend-mode:overlay;
+    animation:flicker 6s infinite steps(60);
+  }
+  @keyframes flicker{ 0%,97%,100%{opacity:1;} 98%{opacity:0.85;} }
+
+  /* corner brackets */
+  .corner{position:absolute; width:26px; height:26px; border:2px solid var(--osd-dim); opacity:0.8;}
+  .corner.tl{top:14px;left:14px;border-right:none;border-bottom:none;}
+  .corner.tr{top:14px;right:14px;border-left:none;border-bottom:none;}
+  .corner.bl{bottom:14px;left:14px;border-right:none;border-top:none;}
+  .corner.br{bottom:14px;right:14px;border-left:none;border-top:none;}
+
+  .hud-top, .hud-bottom{
+    position:absolute; left:0; right:0;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 24px;
+    font-size:12px;
+    letter-spacing:1px;
+    color:var(--osd);
+    text-shadow:0 0 6px rgba(57,255,138,0.6);
+    z-index:4;
+  }
+  .hud-top{top:0;}
+  .hud-bottom{bottom:0;}
+  .rec{display:flex;align-items:center;gap:6px;}
+  .rec .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);animation:blink 1s infinite;}
+  @keyframes blink{ 50%{opacity:0.25;} }
+  .batt-wrap{display:flex;align-items:center;gap:6px;}
+  .batt-bar{width:56px;height:10px;border:1px solid var(--osd);position:relative;}
+  .batt-fill{position:absolute;top:1px;bottom:1px;left:1px;background:var(--osd);transition:width .4s ease;}
+
+  .stage{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    padding:60px 34px;
+    z-index:3;
+  }
+  .view{display:none; width:100%; text-align:center;}
+  .view.active{display:flex; flex-direction:column; align-items:center; gap:14px;}
+
+  /* INTRO */
+  .reticle{
+    width:70px;height:70px;position:relative;margin-bottom:4px;
+    opacity:0.9;
+  }
+  .reticle::before,.reticle::after{
+    content:"";position:absolute;background:var(--osd);
+  }
+  .reticle::before{ top:50%;left:8%;right:8%;height:2px;transform:translateY(-50%); }
+  .reticle::after{ left:50%;top:8%;bottom:8%;width:2px;transform:translateX(-50%); }
+  .reticle .ring{position:absolute;inset:14%;border:2px solid var(--osd);border-radius:50%;}
+
+  h1.title{
+    font-size:26px; margin:0; letter-spacing:2px; color:#eafff2;
+    text-shadow:0 0 14px rgba(57,255,138,0.5);
+  }
+  .subtitle{font-size:13px; color:var(--text-dim); max-width:440px; line-height:1.6; margin:0;}
+
+  .callsign-row{display:flex; gap:8px; margin-top:6px; align-items:center;}
+  .callsign-row label{font-size:11px; color:var(--text-dim); letter-spacing:1px;}
+  input#callsign{
+    background:rgba(57,255,138,0.05);
+    border:1px solid var(--osd-dim);
+    color:var(--osd);
+    font-family:'Share Tech Mono',monospace;
+    padding:8px 10px; font-size:16px; letter-spacing:1px;
+    width:160px; text-align:center; outline:none;
+    -webkit-appearance:none; appearance:none; border-radius:0;
+  }
+  input#callsign:focus{border-color:var(--osd); box-shadow:0 0 8px rgba(57,255,138,0.3);}
+
+  .btn{
+    margin-top:10px;
+    background:transparent;
+    border:1px solid var(--osd);
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    color:var(--osd);
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    letter-spacing:2px;
+    font-size:15px;
+    padding:11px 30px;
+    cursor:pointer;
+    position:relative;
+    transition:all .15s ease;
+    text-transform:uppercase;
+  }
+  .btn:hover{ background:rgba(57,255,138,0.12); box-shadow:0 0 16px rgba(57,255,138,0.35); }
+  .btn:active{ transform:scale(0.97); }
+  .btn.secondary{border-color:var(--text-dim); color:var(--text-dim);}
+  .btn.secondary:hover{background:rgba(127,174,147,0.1); box-shadow:none;}
+
+  /* QUIZ */
+  .axis-tag{font-size:11px; color:var(--amber); letter-spacing:2px; text-shadow:0 0 6px rgba(255,179,0,0.5);}
+  .question{
+    font-family:'Rajdhani',sans-serif; font-weight:600;
+    font-size:21px; line-height:1.4; color:#f2fff7; max-width:480px;
+    margin:2px 0 6px 0;
+  }
+  .options{display:flex; flex-direction:column; gap:10px; width:100%; max-width:480px;}
+  .opt{
+    display:flex; gap:10px; align-items:flex-start;
+    text-align:left;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    background:rgba(57,255,138,0.03);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:12px 14px;
+    font-family:'Share Tech Mono',monospace;
+    font-size:13.5px;
+    line-height:1.5;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .opt:hover{border-color:var(--osd); background:rgba(57,255,138,0.09); box-shadow:0 0 12px rgba(57,255,138,0.15);}
+  .opt .tag{color:var(--osd); font-weight:bold; flex-shrink:0;}
+  .progress-line{font-size:11px; color:var(--text-dim); letter-spacing:1px; margin-top:4px;}
+
+  /* RESULT */
+  .code-row{display:flex; gap:6px; margin:4px 0 2px 0;}
+  .code-letter{
+    font-family:'Rajdhani',sans-serif; font-weight:700;
+    font-size:36px; color:var(--osd);
+    text-shadow:0 0 16px rgba(57,255,138,0.6);
+    opacity:0; transform:translateY(6px);
+    animation:pop .35s ease forwards;
+  }
+  @keyframes pop{ to{opacity:1; transform:translateY(0);} }
+  .type-name{font-size:22px; margin:2px 0 0 0;}
+  .type-emoji{font-size:30px;}
+  .type-desc{font-size:13px; line-height:1.7; color:var(--text); max-width:480px; margin:6px 0;}
+  .type-tip{font-size:12px; color:var(--amber); max-width:480px; line-height:1.6;}
+  .bars{width:100%; max-width:440px; display:flex; flex-direction:column; gap:10px; margin:10px 0;}
+  .bar-row{font-size:11px; color:var(--text-dim);}
+  .bar-labels{display:flex; justify-content:space-between; margin-bottom:3px; letter-spacing:0.5px;}
+  .bar-track{height:8px; background:rgba(255,255,255,0.06); position:relative; overflow:hidden;}
+  .bar-fill{height:100%; background:linear-gradient(90deg, var(--osd-dim), var(--osd)); transition:width .8s ease;}
+  .btn-row{display:flex; gap:10px; margin-top:8px;}
+
+  @media (max-width:480px){
+    .goggle{
+      aspect-ratio:3/4;
+      width:min(480px, 94vw, calc(94vh * 3 / 4));
+    }
+    h1.title{font-size:20px;}
+    .question{font-size:18px;}
+  }
+  @media (max-height:480px){
+    .goggle{
+      aspect-ratio:16/10;
+      width:min(720px, 94vw, calc(94vh * 16 / 10));
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="goggle">
+  <div class="scanline"></div>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+
+  <div class="hud-top">
+    <div class="rec"><span class="dot"></span>REC</div>
+    <div id="callsignDisplay">PILOT.UNKNOWN</div>
+    <div class="batt-wrap">
+      <span id="voltText">16.8V</span>
+      <div class="batt-bar"><div class="batt-fill" id="battFill" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <div class="stage">
+
+    <!-- INTRO -->
+    <div class="view active" id="view-intro">
+      <div class="reticle"><div class="ring"></div></div>
+      <h1 class="title display-font">FPV PILOT TYPE</h1>
+      <p class="subtitle">고글을 쓰고, 스로틀을 잡는 순간 당신은 어떤 파일럿이 되나요?<br>8개 질문으로 알아보는 나의 FPV 드론 레이서 성향 검사.</p>
+      <div class="callsign-row">
+        <label for="callsign">CALLSIGN</label>
+        <input type="text" id="callsign" placeholder="닉네임 입력" maxlength="12"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          enterkeyhint="go"
+          onkeydown="if(event.key==='Enter'){ event.preventDefault(); this.blur(); startQuiz(); }">
+      </div>
+      <button type="button" class="btn" onclick="this.blur(); startQuiz();">비행 시작 ▶</button>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="view" id="view-quiz">
+      <div class="axis-tag" id="axisTag">AXIS 1 · 공략 성향</div>
+      <div class="question" id="questionText">질문</div>
+      <div class="options" id="optionsWrap"></div>
+      <div class="progress-line" id="progressText">LAP 1 / 8</div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="view" id="view-result">
+      <div class="type-emoji" id="resultEmoji">🔥</div>
+      <div class="code-row" id="codeRow"></div>
+      <div class="type-name display-font" id="resultName">타입 이름</div>
+      <div class="type-desc" id="resultDesc">설명</div>
+      <div class="bars" id="barsWrap"></div>
+      <div class="type-tip" id="resultTip">세팅 팁</div>
+      <div class="btn-row">
+        <button class="btn" onclick="restartQuiz()">다시 검사하기 ↺</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="hud-bottom">
+    <div id="hudLeft">ALT 0.0m</div>
+    <div id="hudMode">MODE: ACRO</div>
+    <div id="hudRight">GPS: --</div>
+  </div>
+</div>
+
+<script>
+// ---------- 데이터 ----------
+const AXES = [
+  { key:1, label:"공략 성향", left:{letter:'A', name:'어택'}, right:{letter:'L', name:'라인'} },
+  { key:2, label:"튜닝 철학", left:{letter:'T', name:'튜너'}, right:{letter:'F', name:'필'} },
+  { key:3, label:"연습 방식", left:{letter:'G', name:'그라인더'}, right:{letter:'S', name:'프리스타일'} },
+  { key:4, label:"관계 성향", left:{letter:'Q', name:'스쿼드'}, right:{letter:'R', name:'로너'} },
+];
+
+const QUESTIONS = [
+  { axis:1, text:"좁은 게이트 사이 갭, 라인이 살짝 애매합니다. 당신은?",
+    a:"일단 스로틀 박고 본다 — 몸이 먼저 반응한다", b:"머릿속으로 각도부터 계산하고 진입한다" },
+  { axis:1, text:"새로운 트릭에 도전하는 프랙탑(연습장) 세션.",
+    a:"충돌을 각오하고 바로 시도해본다", b:"낮은 스로틀로 천천히 각을 잡고 연습한다" },
+  { axis:2, text:"비행이 뭔가 미묘하게 어색하게 느껴집니다.",
+    a:"베타플라이트 켜고 PID·레이트부터 뜯어본다", b:"몇 판 더 날려보면서 손으로 적응한다" },
+  { axis:2, text:"새 프레임 조립 후 첫 비행 전.",
+    a:"필터·노치·레이트까지 다 맞추고 나간다", b:"일단 기본값으로 날려보고 감으로 조정한다" },
+  { axis:3, text:"좋아하는 트랙이나 스팟에서.",
+    a:"같은 랩을 몇 번이고 반복하며 타임어택", b:"매번 다른 라인, 다른 트릭으로 자유비행" },
+  { axis:3, text:"이번 주 연습 목표를 정한다면.",
+    a:"\"랩타임 0.3초 단축\" 같은 구체적 목표", b:"\"그냥 날리면서 느낌 오는 대로\"" },
+  { axis:4, text:"주말 비행 계획을 세울 때.",
+    a:"스쿼드 단톡방에 \"이번 주말 콜?\"", b:"혼자 조용히 나가서 날린다" },
+  { axis:4, text:"충돌로 기체가 부서졌을 때.",
+    a:"바로 사진 찍어 단톡방에 인증·놀림거리로 공유", b:"혼자 조용히 수리하고 다음에 얘기한다" },
+];
+
+const TYPES = {
+  ATGQ:{emoji:'🔥',name:'완벽주의 돌격대장',
+    desc:'몸이 먼저 반응하는 공격적인 라인을 타면서도, 집에 가면 베타플라이트 켜고 PID값을 미친듯이 판다. 랩타임 단축을 위해 같은 구간을 수백 번 반복하고, 그 과정을 스쿼드와 실시간으로 공유하며 에너지를 얻는다.',
+    tip:'하이레이트 + 타이트한 P게인, 배터리는 무조건 풀충전.'},
+  ATGR:{emoji:'🥇',name:'나 홀로 랩타임 장인',
+    desc:'공격적으로 몰아붙이면서도 세팅은 데이터 기반으로 완벽하게 잡는다. 다만 그 모든 과정을 혼자 조용히 해낸다. 새벽 트랙에서 아무도 없이 랩타임을 갈아치우고, SNS엔 결과만 툭 올린다.',
+    tip:'개인 최적화된 커스텀 레이트 프로파일, 아무도 못 건드리게 저장.'},
+  ATSQ:{emoji:'🎉',name:'인싸 트릭스터',
+    desc:'한계까지 밀어붙이는 공격형 비행에 완벽한 세팅까지 갖췄지만, 정작 연습은 매번 다른 트릭으로 즉흥적으로. 스쿼드 앞에서 새 무브를 선보이는 걸 즐기고, 다 같이 리액션 보는 재미로 난다.',
+    tip:'반응 빠른 하이레이트 + 눈에 띄는 LED, 관객이 있을수록 잘 나온다.'},
+  ATSR:{emoji:'🌙',name:'은둔 트릭마스터',
+    desc:'완벽하게 세팅된 기체로 공격적인 트릭을 즉흥적으로 만들어내지만, 그 무대는 늘 아무도 없는 자기만의 공간. 영상은 찍어도 잘 안 올리고, 실력은 어느 순간 훌쩍 늘어있다.',
+    tip:'극한까지 다듬은 나만의 레이트 곡선, 아무도 모르는 비밀 스팟.'},
+  AFGQ:{emoji:'💪',name:'감각파 스파르타',
+    desc:'세팅은 감으로, 몸으로 익힌다. 대신 반복 훈련은 타협이 없다. 스쿼드와 함께 같은 구간을 몇 시간이고 도는 걸 즐기고, "느낌 왔다"는 말을 제일 많이 한다.',
+    tip:'기본값에서 손맛만 살짝 조정, 나머진 다 연습으로 극복.'},
+  AFGR:{emoji:'🏃',name:'야생의 반복러너',
+    desc:'감각으로 세팅하고 혼자 묵묵히 같은 랩을 반복한다. 데이터보다 몸이 기억하는 감각을 믿고, 발전 과정을 아무에게도 보여주지 않다가 어느 날 갑자기 압도적인 실력으로 나타난다.',
+    tip:'손에 익은 그 세팅 그대로, 바꾸지 않는 게 핵심.'},
+  AFSQ:{emoji:'🎊',name:'분위기 메이커',
+    desc:'감각적으로 날고, 매번 다르게 날고, 늘 사람들과 함께 난다. 충돌해도 웃고, 트릭 성공해도 다 같이 소리지르는 이 사람 덕분에 스쿼드 분위기가 산다.',
+    tip:'세팅보다 스피커 볼륨이 더 중요할지도.'},
+  AFSR:{emoji:'🍃',name:'자유로운 영혼',
+    desc:'세팅도, 연습도, 비행도 그때그때 기분 따라. 혼자 노을 질 때 나가서 즉흥적으로 날다 오는 걸 제일 좋아한다. 랩타임보다 그 순간의 느낌을 중요하게 여긴다.',
+    tip:'정해진 세팅이 없는 게 세팅. 그날 기분 따라 간다.'},
+  LTGQ:{emoji:'📊',name:'전략가형 팀장',
+    desc:'정교한 라인을 데이터로 다듬고, 같은 구간을 계획적으로 반복하며 팀 전체의 랩타임까지 챙긴다. 스쿼드에서 자연스럽게 "이번 세팅 공유합니다" 하는 사람.',
+    tip:'부드러운 레이트 + 촘촘한 필터링, 엑셀로 정리된 랩타임 기록.'},
+  LTGR:{emoji:'🧘',name:'데이터 수도승',
+    desc:'완벽한 라인, 완벽한 세팅, 완벽한 반복훈련. 다만 이 모든 걸 아무도 모르게 혼자 해낸다. 대회 날 갑자기 나타나 조용히 우승하고 사라진다.',
+    tip:'몇 달간 다듬은 필터 값, 남한테는 절대 안 알려줌.'},
+  LTSQ:{emoji:'🛠️',name:'크리에이티브 엔지니어',
+    desc:'정밀한 라인 컨트롤에 튜닝 실력까지 갖췄지만, 정작 매번 새로운 시도를 즐긴다. 스쿼드 사람들과 새 부품이나 세팅을 같이 테스트하는 걸 좋아한다.',
+    tip:'실험적인 믹서 설정, 매주 바뀌는 나만의 베타 버전.'},
+  LTSR:{emoji:'💻',name:'은둔 개발자',
+    desc:'라인도 세팅도 완벽하게 정교하지만, 늘 새로운 걸 혼자 시도한다. 커스텀 펌웨어나 특이한 프레임 조합을 조용히 테스트하는 타입. 커뮤니티에 가끔 나타나 엄청난 팁을 던지고 사라진다.',
+    tip:'아무도 안 써본 조합, 혼자만의 연구실.'},
+  LFGQ:{emoji:'🧰',name:'성실한 살림꾼',
+    desc:'정교하게 날고, 세팅은 감으로 맞추고, 반복 연습을 꾸준히 하되 늘 스쿼드와 함께. 기체 정비부터 배터리 관리까지 팀에서 제일 꼼꼼하게 챙기는 사람.',
+    tip:'안정적인 미드레이트, 배터리는 항상 로테이션 관리.'},
+  LFGR:{emoji:'📚',name:'묵묵한 연습벌레',
+    desc:'정교한 라인을 감각으로 다듬으며 혼자 꾸준히 반복한다. 화려하진 않지만 어느새 제일 안정적인 랩타임을 찍는 사람. 묵묵히 실력이 느는 스타일.',
+    tip:'무난하지만 손에 익은 세팅, 바꿀 이유가 없다.'},
+  LFSQ:{emoji:'🌸',name:'힐링 비행러',
+    desc:'정교하고 부드러운 라인을, 감각적으로, 매번 다르게, 사람들과 함께 즐긴다. 랩타임보다 다 같이 예쁜 라인 만들고 이야기 나누는 시간을 더 소중히 여긴다.',
+    tip:'부드러운 필터에 편안한 레이트, 스트레스 없는 비행이 목표.'},
+  LFSR:{emoji:'🌌',name:'고요한 방랑자',
+    desc:'부드럽고 정교한 라인을 감각적으로, 매번 다르게, 혼자서 즐긴다. 아무도 없는 시간에 나가 자연과 함께 나는 걸 가장 좋아하는, 가장 여유로운 파일럿.',
+    tip:'편안한 세팅, 정해진 것 없이 그날의 바람 따라.'},
+};
+
+// ---------- 상태 ----------
+let current = 0;
+let scores = {};
+AXES.forEach(a=>{ scores[a.left.letter]=0; scores[a.right.letter]=0; });
+
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startQuiz(){
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  const cs = document.getElementById('callsign').value.trim();
+  document.getElementById('callsignDisplay').textContent = cs ? cs.toUpperCase() : 'PILOT.UNKNOWN';
+  current = 0;
+  AXES.forEach(a=>{ scores[a.left.letter]=0; scores[a.right.letter]=0; });
+  document.getElementById('hudMode').textContent = 'MODE: ACRO';
+  // 아이폰에서 키보드/자동확대가 닫히는 애니메이션이 끝난 뒤 화면 전환
+  setTimeout(()=>{
+    showView('view-quiz');
+    renderQuestion();
+  }, 60);
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[current];
+  const axis = AXES[q.axis-1];
+  document.getElementById('axisTag').textContent = `AXIS ${q.axis} · ${axis.label}`;
+  document.getElementById('questionText').textContent = q.text;
+  document.getElementById('progressText').textContent = `LAP ${current+1} / ${QUESTIONS.length}`;
+
+  const pct = Math.round(100 - (current/QUESTIONS.length)*40); // 16.8V -> 대략적인 방전 연출
+  const volt = (12.6 + (pct/100)*4.2).toFixed(1);
+  document.getElementById('battFill').style.width = pct+'%';
+  document.getElementById('voltText').textContent = volt+'V';
+  document.getElementById('hudLeft').textContent = 'ALT ' + (current*7.2).toFixed(1) + 'm';
+  document.getElementById('hudRight').textContent = 'GPS: ' + (3+current) + ' SATS';
+
+  const wrap = document.getElementById('optionsWrap');
+  wrap.innerHTML = '';
+  const opts = [ {letter:axis.left.letter, text:q.a}, {letter:axis.right.letter, text:q.b} ];
+  opts.forEach(o=>{
+    const div = document.createElement('div');
+    div.className = 'opt';
+    div.innerHTML = `<span class="tag">${o.letter})</span><span>${o.text}</span>`;
+    div.onclick = ()=> answer(o.letter);
+    wrap.appendChild(div);
+  });
+}
+
+function answer(letter){
+  scores[letter] += 1;
+  current += 1;
+  if(current < QUESTIONS.length){
+    renderQuestion();
+  } else {
+    finishQuiz();
+  }
+}
+
+function finishQuiz(){
+  let code = '';
+  let barsData = [];
+  AXES.forEach(a=>{
+    const l = scores[a.left.letter], r = scores[a.right.letter];
+    const winner = l >= r ? a.left.letter : a.right.letter;
+    code += winner;
+    const total = l+r || 1;
+    barsData.push({
+      label:a.label,
+      leftName:a.left.name, rightName:a.right.name,
+      leftPct: Math.round(l/total*100)
+    });
+  });
+
+  const t = TYPES[code];
+  document.getElementById('resultEmoji').textContent = t.emoji;
+  document.getElementById('resultName').textContent = t.name;
+  document.getElementById('resultDesc').textContent = t.desc;
+  document.getElementById('resultTip').textContent = '▸ ' + t.tip;
+
+  const codeRow = document.getElementById('codeRow');
+  codeRow.innerHTML = '';
+  code.split('').forEach((ch,i)=>{
+    const span = document.createElement('span');
+    span.className = 'code-letter';
+    span.textContent = ch;
+    span.style.animationDelay = (i*0.15)+'s';
+    codeRow.appendChild(span);
+  });
+
+  const barsWrap = document.getElementById('barsWrap');
+  barsWrap.innerHTML = '';
+  barsData.forEach(b=>{
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-labels"><span>${b.leftName}</span><span>${b.label}</span><span>${b.rightName}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${b.leftPct}%"></div></div>
+    `;
+    barsWrap.appendChild(row);
+  });
+
+  document.getElementById('hudMode').textContent = 'MODE: RESULT';
+  document.getElementById('battFill').style.width = '60%';
+  document.getElementById('voltText').textContent = '15.0V';
+  showView('view-result');
+}
+
+function restartQuiz(){
+  showView('view-intro');
+}
+</script>
+
+</body>
+</html>

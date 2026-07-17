@@ -2,487 +2,603 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FPV PILOT TYPE — 조종석 성향 검사</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FPTI — FPV 파일럿 성향 테스트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#04070a;
-    --panel:#0a1210;
-    --line:#1c3a2c;
-    --osd:#39ff8a;
-    --osd-dim:#1f8a52;
-    --amber:#ffb300;
-    --red:#ff3860;
-    --text:#d7ffe4;
-    --text-dim:#7fae93;
+    --bg:#090c10;
+    --bg-panel:#12181e;
+    --bg-panel-2:#1a222a;
+    --line:#28333c;
+    --line-soft:#1c252d;
+    --lime:#c6ff3d;
+    --magenta:#ff3d6e;
+    --cyan:#3de8ff;
+    --yellow:#ffd23d;
+    --purple:#b968ff;
+    --text:#eaf2ec;
+    --text-dim:#7c8a84;
+    --text-dim2:#4d5a55;
+    --font-display:'Black Han Sans', sans-serif;
+    --font-body:'Noto Sans KR', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{height:100%; overflow-y:auto;}
+  html,body{margin:0; padding:0;}
   body{
-    margin:0;
     background:
-      radial-gradient(ellipse at 50% -10%, #0c1a14 0%, var(--bg) 55%),
+      radial-gradient(circle at 20% -10%, rgba(198,255,61,0.06), transparent 45%),
+      radial-gradient(circle at 100% 110%, rgba(255,61,110,0.07), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 42px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 42px),
       var(--bg);
     color:var(--text);
-    font-family:'Share Tech Mono', monospace;
+    font-family:var(--font-body);
+    min-height:100vh;
     display:flex;
     align-items:center;
     justify-content:center;
-    min-height:100vh;
-    min-height:100dvh;
-    padding:24px;
-    touch-action:manipulation;
-    -webkit-user-select:none;
-    user-select:none;
-    -webkit-touch-callout:none;
+    padding:24px 14px;
   }
-  input, textarea{
-    -webkit-user-select:text;
-    user-select:text;
-    -webkit-touch-callout:default;
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
   }
-  .display-font{font-family:'Rajdhani',sans-serif;font-weight:700;}
 
-  .goggle{
+  .rig{
+    width:100%;
+    max-width:640px;
     position:relative;
-    width:min(720px, 94vw, calc(94vh * 4 / 3));
-    aspect-ratio:4/3;
-    background:
-      repeating-linear-gradient(0deg, rgba(57,255,138,0.025) 0px, rgba(57,255,138,0.025) 1px, transparent 1px, transparent 3px),
-      radial-gradient(ellipse at center, #071410 0%, #030503 80%);
-    border-radius:26px;
-    border:2px solid var(--line);
-    box-shadow:
-      0 0 0 1px rgba(57,255,138,0.06),
-      0 30px 80px rgba(0,0,0,0.6),
-      inset 0 0 60px rgba(0,0,0,0.5);
-    overflow:hidden;
   }
-  .goggle::before{
-    content:"";
-    position:absolute;inset:0;
-    background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent 20%);
+
+  /* HUD frame corners — the signature motif, reused on every screen */
+  .frame{
+    position:relative;
+    background:linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:34px 26px 28px;
+    min-height:420px;
+    display:flex;
+    flex-direction:column;
+  }
+  .frame::before, .frame::after,
+  .frame .cA, .frame .cB{
+    content:'';
+    position:absolute;
+    width:20px; height:20px;
+    border:2px solid var(--lime);
+    opacity:0.85;
     pointer-events:none;
   }
-  .scanline{
-    position:absolute; inset:0; pointer-events:none !important; z-index:5;
-    background:repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, transparent 1px, transparent 2px);
-    mix-blend-mode:overlay;
-    animation:flicker 6s infinite steps(60);
-  }
-  @keyframes flicker{ 0%,97%,100%{opacity:1;} 98%{opacity:0.85;} }
+  .frame::before{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+  .frame::after{ top:-1px; right:-1px; border-left:none; border-bottom:none; }
+  .frame .cA{ bottom:-1px; left:-1px; border-right:none; border-top:none; }
+  .frame .cB{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
 
-  /* corner brackets */
-  .corner{position:absolute; width:26px; height:26px; border:2px solid var(--osd-dim); opacity:0.8;}
-  .corner.tl{top:14px;left:14px;border-right:none;border-bottom:none;}
-  .corner.tr{top:14px;right:14px;border-left:none;border-bottom:none;}
-  .corner.bl{bottom:14px;left:14px;border-right:none;border-top:none;}
-  .corner.br{bottom:14px;right:14px;border-left:none;border-top:none;}
+  .topline{
+    display:flex; align-items:center; justify-content:space-between;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em;
+    color:var(--text-dim); margin-bottom:18px; text-transform:uppercase;
+  }
+  .rec{ display:flex; align-items:center; gap:6px; color:var(--magenta); }
+  .rec .dot{ width:7px; height:7px; border-radius:50%; background:var(--magenta); animation:blink 1.4s infinite; box-shadow:0 0 8px var(--magenta); }
+  @keyframes blink{ 0%,55%{opacity:1;} 56%,100%{opacity:0.15;} }
 
-  .hud-top, .hud-bottom{
-    position:absolute; left:0; right:0;
-    display:flex; justify-content:space-between; align-items:center;
-    padding:10px 24px;
-    font-size:12px;
-    letter-spacing:1px;
-    color:var(--osd);
-    text-shadow:0 0 6px rgba(57,255,138,0.6);
-    z-index:4;
+  /* ---------- INTRO ---------- */
+  .intro h1{
+    font-family:var(--font-display);
+    font-size:clamp(46px, 13vw, 68px);
+    line-height:0.95;
+    letter-spacing:0.01em;
+    margin:6px 0 6px;
+    color:var(--lime);
+    text-shadow:0 0 26px rgba(198,255,61,0.35);
   }
-  .hud-top{top:0;}
-  .hud-bottom{bottom:0;}
-  .rec{display:flex;align-items:center;gap:6px;}
-  .rec .dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);animation:blink 1s infinite;}
-  @keyframes blink{ 50%{opacity:0.25;} }
-  .batt-wrap{display:flex;align-items:center;gap:6px;}
-  .batt-bar{width:56px;height:10px;border:1px solid var(--osd);position:relative;}
-  .batt-fill{position:absolute;top:1px;bottom:1px;left:1px;background:var(--osd);transition:width .4s ease;}
+  .intro .sub{
+    font-family:var(--font-display);
+    font-size:clamp(18px, 5vw, 24px);
+    color:var(--text);
+    margin:0 0 16px;
+  }
+  .intro p{
+    font-size:14.5px; line-height:1.75; color:var(--text-dim); margin:0 0 22px;
+    max-width:46ch;
+  }
+  .axis-legend{
+    display:grid; grid-template-columns:1fr; gap:8px; margin:6px 0 26px;
+  }
+  .axis-legend .row{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim);
+    border-left:2px solid var(--line); padding:6px 0 6px 12px;
+  }
+  .axis-legend .row b{ color:var(--text); font-weight:700; }
+  .swatch{ width:9px; height:9px; border-radius:2px; flex:none; }
 
-  .stage{
-    position:absolute; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    padding:60px 34px;
-    z-index:3;
+  .meta-row{
+    font-family:var(--font-mono); font-size:11.5px; color:var(--text-dim2);
+    display:flex; justify-content:space-between; margin-top:auto; padding-top:18px;
+    border-top:1px dashed var(--line-soft);
   }
-  .view{display:none; width:100%; text-align:center;}
-  .view.active{display:flex; flex-direction:column; align-items:center; gap:14px;}
-
-  /* INTRO */
-  .reticle{
-    width:70px;height:70px;position:relative;margin-bottom:4px;
-    opacity:0.9;
-  }
-  .reticle::before,.reticle::after{
-    content:"";position:absolute;background:var(--osd);
-  }
-  .reticle::before{ top:50%;left:8%;right:8%;height:2px;transform:translateY(-50%); }
-  .reticle::after{ left:50%;top:8%;bottom:8%;width:2px;transform:translateX(-50%); }
-  .reticle .ring{position:absolute;inset:14%;border:2px solid var(--osd);border-radius:50%;}
-
-  h1.title{
-    font-size:26px; margin:0; letter-spacing:2px; color:#eafff2;
-    text-shadow:0 0 14px rgba(57,255,138,0.5);
-  }
-  .subtitle{font-size:13px; color:var(--text-dim); max-width:440px; line-height:1.6; margin:0;}
-
-  .callsign-row{display:flex; gap:8px; margin-top:6px; align-items:center;}
-  .callsign-row label{font-size:11px; color:var(--text-dim); letter-spacing:1px;}
-  input#callsign{
-    background:rgba(57,255,138,0.05);
-    border:1px solid var(--osd-dim);
-    color:var(--osd);
-    font-family:'Share Tech Mono',monospace;
-    padding:8px 10px; font-size:16px; letter-spacing:1px;
-    width:160px; text-align:center; outline:none;
-    -webkit-appearance:none; appearance:none; border-radius:0;
-  }
-  input#callsign:focus{border-color:var(--osd); box-shadow:0 0 8px rgba(57,255,138,0.3);}
 
   .btn{
-    margin-top:10px;
-    background:transparent;
-    border:1px solid var(--osd);
-    -webkit-user-select:none;
-    user-select:none;
-    -webkit-touch-callout:none;
-    color:var(--osd);
-    font-family:'Rajdhani',sans-serif;
-    font-weight:700;
-    letter-spacing:2px;
-    font-size:15px;
-    padding:11px 30px;
-    cursor:pointer;
-    position:relative;
-    transition:all .15s ease;
-    text-transform:uppercase;
+    appearance:none; border:1px solid var(--lime); background:transparent;
+    color:var(--lime); font-family:var(--font-mono); font-weight:700;
+    font-size:14px; letter-spacing:0.06em; padding:15px 22px; border-radius:2px;
+    cursor:pointer; width:100%; text-align:center; text-transform:uppercase;
+    transition:background 0.15s, color 0.15s, box-shadow 0.15s;
   }
-  .btn:hover{ background:rgba(57,255,138,0.12); box-shadow:0 0 16px rgba(57,255,138,0.35); }
-  .btn:active{ transform:scale(0.97); }
-  .btn.secondary{border-color:var(--text-dim); color:var(--text-dim);}
-  .btn.secondary:hover{background:rgba(127,174,147,0.1); box-shadow:none;}
+  .btn:hover{ background:var(--lime); color:#0a0f0a; box-shadow:0 0 22px rgba(198,255,61,0.35); }
+  .btn:active{ transform:translateY(1px); }
+  .btn.ghost{ border-color:var(--line); color:var(--text-dim); }
+  .btn.ghost:hover{ background:var(--bg-panel-2); color:var(--text); box-shadow:none; }
+  .btn-row{ display:flex; gap:10px; margin-top:20px; }
 
-  /* QUIZ */
-  .axis-tag{font-size:11px; color:var(--amber); letter-spacing:2px; text-shadow:0 0 6px rgba(255,179,0,0.5);}
-  .question{
-    font-family:'Rajdhani',sans-serif; font-weight:600;
-    font-size:21px; line-height:1.4; color:#f2fff7; max-width:480px;
-    margin:2px 0 6px 0;
+  /* ---------- PROGRESS TICKS ---------- */
+  .telemetry{ margin-bottom:22px; }
+  .ticks{ display:flex; gap:3px; height:8px; }
+  .tick{ flex:1; background:var(--line-soft); border-radius:1px; transition:background 0.25s; }
+  .tick.done{ background:var(--tick-color, var(--lime)); }
+  .tick.current{ background:var(--text); }
+  .telemetry .tlabel{
+    display:flex; justify-content:space-between; margin-top:8px;
+    font-family:var(--font-mono); font-size:11px; color:var(--text-dim);
   }
-  .options{display:flex; flex-direction:column; gap:10px; width:100%; max-width:480px;}
+
+  /* ---------- QUESTION ---------- */
+  .qtag{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:11.5px; font-weight:700;
+    letter-spacing:0.08em; padding:4px 10px; border-radius:2px;
+    border:1px solid var(--tag-color); color:var(--tag-color); width:fit-content;
+    margin-bottom:14px; text-transform:uppercase;
+  }
+  .qtext{
+    font-family:var(--font-display);
+    font-size:clamp(21px, 6vw, 27px);
+    line-height:1.32; margin:0 0 22px; color:var(--text);
+    min-height:2.6em;
+  }
+  .options{ display:flex; flex-direction:column; gap:9px; }
   .opt{
-    display:flex; gap:10px; align-items:flex-start;
-    text-align:left;
-    -webkit-user-select:none;
-    user-select:none;
-    -webkit-touch-callout:none;
-    background:rgba(57,255,138,0.03);
-    border:1px solid var(--line);
-    color:var(--text);
-    padding:12px 14px;
-    font-family:'Share Tech Mono',monospace;
-    font-size:13.5px;
-    line-height:1.5;
-    cursor:pointer;
-    transition:all .15s ease;
+    display:flex; align-items:center; gap:12px;
+    background:var(--bg-panel-2); border:1px solid var(--line);
+    border-radius:3px; padding:14px 16px; cursor:pointer;
+    font-size:14.5px; color:var(--text); text-align:left;
+    transition:border-color 0.15s, background 0.15s, transform 0.1s;
+    font-family:var(--font-body);
   }
-  .opt:hover{border-color:var(--osd); background:rgba(57,255,138,0.09); box-shadow:0 0 12px rgba(57,255,138,0.15);}
-  .opt .tag{color:var(--osd); font-weight:bold; flex-shrink:0;}
-  .progress-line{font-size:11px; color:var(--text-dim); letter-spacing:1px; margin-top:4px;}
+  .opt .idx{
+    font-family:var(--font-mono); font-size:11px; color:var(--text-dim2);
+    border:1px solid var(--line); border-radius:50%; width:20px; height:20px;
+    display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .opt:hover{ border-color:var(--tag-color); background:#1e2830; }
+  .opt.selected{ border-color:var(--tag-color); background:rgba(198,255,61,0.07); }
+  .opt.selected .idx{ background:var(--tag-color); color:#0a0f0a; border-color:var(--tag-color); }
 
-  /* RESULT */
-  .code-row{display:flex; gap:6px; margin:4px 0 2px 0;}
-  .code-letter{
-    font-family:'Rajdhani',sans-serif; font-weight:700;
-    font-size:36px; color:var(--osd);
-    text-shadow:0 0 16px rgba(57,255,138,0.6);
-    opacity:0; transform:translateY(6px);
-    animation:pop .35s ease forwards;
+  .qfoot{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:20px; padding-top:14px; border-top:1px dashed var(--line-soft);
   }
-  @keyframes pop{ to{opacity:1; transform:translateY(0);} }
-  .type-name{font-size:22px; margin:2px 0 0 0;}
-  .type-emoji{font-size:30px;}
-  .type-desc{font-size:13px; line-height:1.7; color:var(--text); max-width:480px; margin:6px 0;}
-  .type-tip{font-size:12px; color:var(--amber); max-width:480px; line-height:1.6;}
-  .bars{width:100%; max-width:440px; display:flex; flex-direction:column; gap:10px; margin:10px 0;}
-  .bar-row{font-size:11px; color:var(--text-dim);}
-  .bar-labels{display:flex; justify-content:space-between; margin-bottom:3px; letter-spacing:0.5px;}
-  .bar-track{height:8px; background:rgba(255,255,255,0.06); position:relative; overflow:hidden;}
-  .bar-fill{height:100%; background:linear-gradient(90deg, var(--osd-dim), var(--osd)); transition:width .8s ease;}
-  .btn-row{display:flex; gap:10px; margin-top:8px;}
+  .link-btn{
+    background:none; border:none; color:var(--text-dim); font-family:var(--font-mono);
+    font-size:12px; cursor:pointer; padding:6px 4px; letter-spacing:0.04em;
+  }
+  .link-btn:hover{ color:var(--text); }
+  .link-btn:disabled{ opacity:0.3; cursor:default; }
 
-  @media (max-width:480px){
-    .goggle{
-      aspect-ratio:3/4;
-      width:min(480px, 94vw, calc(94vh * 3 / 4));
-    }
-    h1.title{font-size:20px;}
-    .question{font-size:18px;}
+  /* ---------- RESULT ---------- */
+  .result-head{ text-align:center; margin-bottom:6px; }
+  .result-eyebrow{
+    font-family:var(--font-mono); font-size:11.5px; color:var(--text-dim);
+    letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px;
   }
-  @media (max-height:480px){
-    .goggle{
-      aspect-ratio:16/10;
-      width:min(720px, 94vw, calc(94vh * 16 / 10));
-    }
+  .code-row{ display:flex; justify-content:center; gap:8px; margin:8px 0 16px; flex-wrap:wrap; }
+  .code-chip{
+    width:46px; height:46px; border-radius:4px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-size:24px; color:#0a0f0a;
+    box-shadow:0 0 18px rgba(0,0,0,0.4);
+  }
+  .result-title{
+    font-family:var(--font-display); font-size:clamp(22px,6vw,28px); text-align:center;
+    color:var(--lime); margin:0 0 18px; line-height:1.3;
+    text-shadow:0 0 20px rgba(198,255,61,0.3);
+  }
+  .summary{
+    font-size:14px; line-height:1.8; color:var(--text-dim); text-align:center;
+    max-width:48ch; margin:0 auto 26px; padding:0 4px;
+  }
+  .summary b{ color:var(--text); font-weight:700; }
+
+  .radar-wrap{ display:flex; justify-content:center; margin:6px 0 22px; }
+
+  .axis-cards{ display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
+  .axis-card{
+    border:1px solid var(--line); background:var(--bg-panel-2); border-radius:3px;
+    padding:13px 14px;
+  }
+  .axis-card .ac-top{
+    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;
+    font-family:var(--font-mono); font-size:11px; color:var(--text-dim);
+  }
+  .axis-card .ac-name{ font-weight:700; font-size:14.5px; font-family:var(--font-body); }
+  .bar-track{
+    position:relative; height:6px; background:var(--line-soft); border-radius:3px; margin:8px 0 8px;
+    overflow:visible;
+  }
+  .bar-fill{ position:absolute; top:0; bottom:0; left:0; border-radius:3px; }
+  .bar-dot{
+    position:absolute; top:50%; width:12px; height:12px; border-radius:50%;
+    background:var(--text); transform:translate(-50%,-50%);
+    box-shadow:0 0 0 3px var(--bg-panel-2), 0 0 10px rgba(0,0,0,0.5);
+  }
+  .ac-poles{ display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim); }
+  .ac-desc{ font-size:13px; line-height:1.6; color:var(--text-dim); margin-top:9px; }
+
+  .frame.result-frame{ min-height:auto; }
+
+  @media (max-width:400px){
+    .frame{ padding:26px 16px 22px; }
+    .btn-row{ flex-direction:column; }
   }
 </style>
 </head>
 <body>
 
-<div class="goggle">
-  <div class="scanline"></div>
-  <div class="corner tl"></div><div class="corner tr"></div>
-  <div class="corner bl"></div><div class="corner br"></div>
-
-  <div class="hud-top">
-    <div class="rec"><span class="dot"></span>REC</div>
-    <div id="callsignDisplay">PILOT.UNKNOWN</div>
-    <div class="batt-wrap">
-      <span id="voltText">16.8V</span>
-      <div class="batt-bar"><div class="batt-fill" id="battFill" style="width:100%"></div></div>
+<div class="rig">
+  <div class="frame" id="frame">
+    <span class="cA"></span><span class="cB"></span>
+    <div class="topline">
+      <span>FPTI // FPV PILOT TYPE INDEX</span>
+      <span class="rec"><span class="dot"></span>LIVE</span>
     </div>
-  </div>
-
-  <div class="stage">
-
-    <!-- INTRO -->
-    <div class="view active" id="view-intro">
-      <div class="reticle"><div class="ring"></div></div>
-      <h1 class="title display-font">FPV PILOT TYPE</h1>
-      <p class="subtitle">고글을 쓰고, 스로틀을 잡는 순간 당신은 어떤 파일럿이 되나요?<br>8개 질문으로 알아보는 나의 FPV 드론 레이서 성향 검사.</p>
-      <div class="callsign-row">
-        <label for="callsign">CALLSIGN</label>
-        <input type="text" id="callsign" placeholder="닉네임 입력" maxlength="12"
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          enterkeyhint="go"
-          onkeydown="if(event.key==='Enter'){ event.preventDefault(); this.blur(); startQuiz(); }">
-      </div>
-      <button type="button" class="btn" onclick="this.blur(); startQuiz();">비행 시작 ▶</button>
-    </div>
-
-    <!-- QUIZ -->
-    <div class="view" id="view-quiz">
-      <div class="axis-tag" id="axisTag">AXIS 1 · 공략 성향</div>
-      <div class="question" id="questionText">질문</div>
-      <div class="options" id="optionsWrap"></div>
-      <div class="progress-line" id="progressText">LAP 1 / 8</div>
-    </div>
-
-    <!-- RESULT -->
-    <div class="view" id="view-result">
-      <div class="type-emoji" id="resultEmoji">🔥</div>
-      <div class="code-row" id="codeRow"></div>
-      <div class="type-name display-font" id="resultName">타입 이름</div>
-      <div class="type-desc" id="resultDesc">설명</div>
-      <div class="bars" id="barsWrap"></div>
-      <div class="type-tip" id="resultTip">세팅 팁</div>
-      <div class="btn-row">
-        <button class="btn" onclick="restartQuiz()">다시 검사하기 ↺</button>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="hud-bottom">
-    <div id="hudLeft">ALT 0.0m</div>
-    <div id="hudMode">MODE: ACRO</div>
-    <div id="hudRight">GPS: --</div>
+    <div id="screen"></div>
   </div>
 </div>
 
 <script>
-// ---------- 데이터 ----------
-const AXES = [
-  { key:1, label:"공략 성향", left:{letter:'A', name:'어택'}, right:{letter:'L', name:'라인'} },
-  { key:2, label:"튜닝 철학", left:{letter:'T', name:'튜너'}, right:{letter:'F', name:'필'} },
-  { key:3, label:"연습 방식", left:{letter:'G', name:'그라인더'}, right:{letter:'S', name:'프리스타일'} },
-  { key:4, label:"관계 성향", left:{letter:'Q', name:'스쿼드'}, right:{letter:'R', name:'로너'} },
-];
+/* ===================== DATA ===================== */
 
-const QUESTIONS = [
-  { axis:1, text:"좁은 게이트 사이 갭, 라인이 살짝 애매합니다. 당신은?",
-    a:"일단 스로틀 박고 본다 — 몸이 먼저 반응한다", b:"머릿속으로 각도부터 계산하고 진입한다" },
-  { axis:1, text:"새로운 트릭에 도전하는 프랙탑(연습장) 세션.",
-    a:"충돌을 각오하고 바로 시도해본다", b:"낮은 스로틀로 천천히 각을 잡고 연습한다" },
-  { axis:2, text:"비행이 뭔가 미묘하게 어색하게 느껴집니다.",
-    a:"베타플라이트 켜고 PID·레이트부터 뜯어본다", b:"몇 판 더 날려보면서 손으로 적응한다" },
-  { axis:2, text:"새 프레임 조립 후 첫 비행 전.",
-    a:"필터·노치·레이트까지 다 맞추고 나간다", b:"일단 기본값으로 날려보고 감으로 조정한다" },
-  { axis:3, text:"좋아하는 트랙이나 스팟에서.",
-    a:"같은 랩을 몇 번이고 반복하며 타임어택", b:"매번 다른 라인, 다른 트릭으로 자유비행" },
-  { axis:3, text:"이번 주 연습 목표를 정한다면.",
-    a:"\"랩타임 0.3초 단축\" 같은 구체적 목표", b:"\"그냥 날리면서 느낌 오는 대로\"" },
-  { axis:4, text:"주말 비행 계획을 세울 때.",
-    a:"스쿼드 단톡방에 \"이번 주말 콜?\"", b:"혼자 조용히 나가서 날린다" },
-  { axis:4, text:"충돌로 기체가 부서졌을 때.",
-    a:"바로 사진 찍어 단톡방에 인증·놀림거리로 공유", b:"혼자 조용히 수리하고 다음에 얘기한다" },
-];
-
-const TYPES = {
-  ATGQ:{emoji:'🔥',name:'완벽주의 돌격대장',
-    desc:'몸이 먼저 반응하는 공격적인 라인을 타면서도, 집에 가면 베타플라이트 켜고 PID값을 미친듯이 판다. 랩타임 단축을 위해 같은 구간을 수백 번 반복하고, 그 과정을 스쿼드와 실시간으로 공유하며 에너지를 얻는다.',
-    tip:'하이레이트 + 타이트한 P게인, 배터리는 무조건 풀충전.'},
-  ATGR:{emoji:'🥇',name:'나 홀로 랩타임 장인',
-    desc:'공격적으로 몰아붙이면서도 세팅은 데이터 기반으로 완벽하게 잡는다. 다만 그 모든 과정을 혼자 조용히 해낸다. 새벽 트랙에서 아무도 없이 랩타임을 갈아치우고, SNS엔 결과만 툭 올린다.',
-    tip:'개인 최적화된 커스텀 레이트 프로파일, 아무도 못 건드리게 저장.'},
-  ATSQ:{emoji:'🎉',name:'인싸 트릭스터',
-    desc:'한계까지 밀어붙이는 공격형 비행에 완벽한 세팅까지 갖췄지만, 정작 연습은 매번 다른 트릭으로 즉흥적으로. 스쿼드 앞에서 새 무브를 선보이는 걸 즐기고, 다 같이 리액션 보는 재미로 난다.',
-    tip:'반응 빠른 하이레이트 + 눈에 띄는 LED, 관객이 있을수록 잘 나온다.'},
-  ATSR:{emoji:'🌙',name:'은둔 트릭마스터',
-    desc:'완벽하게 세팅된 기체로 공격적인 트릭을 즉흥적으로 만들어내지만, 그 무대는 늘 아무도 없는 자기만의 공간. 영상은 찍어도 잘 안 올리고, 실력은 어느 순간 훌쩍 늘어있다.',
-    tip:'극한까지 다듬은 나만의 레이트 곡선, 아무도 모르는 비밀 스팟.'},
-  AFGQ:{emoji:'💪',name:'감각파 스파르타',
-    desc:'세팅은 감으로, 몸으로 익힌다. 대신 반복 훈련은 타협이 없다. 스쿼드와 함께 같은 구간을 몇 시간이고 도는 걸 즐기고, "느낌 왔다"는 말을 제일 많이 한다.',
-    tip:'기본값에서 손맛만 살짝 조정, 나머진 다 연습으로 극복.'},
-  AFGR:{emoji:'🏃',name:'야생의 반복러너',
-    desc:'감각으로 세팅하고 혼자 묵묵히 같은 랩을 반복한다. 데이터보다 몸이 기억하는 감각을 믿고, 발전 과정을 아무에게도 보여주지 않다가 어느 날 갑자기 압도적인 실력으로 나타난다.',
-    tip:'손에 익은 그 세팅 그대로, 바꾸지 않는 게 핵심.'},
-  AFSQ:{emoji:'🎊',name:'분위기 메이커',
-    desc:'감각적으로 날고, 매번 다르게 날고, 늘 사람들과 함께 난다. 충돌해도 웃고, 트릭 성공해도 다 같이 소리지르는 이 사람 덕분에 스쿼드 분위기가 산다.',
-    tip:'세팅보다 스피커 볼륨이 더 중요할지도.'},
-  AFSR:{emoji:'🍃',name:'자유로운 영혼',
-    desc:'세팅도, 연습도, 비행도 그때그때 기분 따라. 혼자 노을 질 때 나가서 즉흥적으로 날다 오는 걸 제일 좋아한다. 랩타임보다 그 순간의 느낌을 중요하게 여긴다.',
-    tip:'정해진 세팅이 없는 게 세팅. 그날 기분 따라 간다.'},
-  LTGQ:{emoji:'📊',name:'전략가형 팀장',
-    desc:'정교한 라인을 데이터로 다듬고, 같은 구간을 계획적으로 반복하며 팀 전체의 랩타임까지 챙긴다. 스쿼드에서 자연스럽게 "이번 세팅 공유합니다" 하는 사람.',
-    tip:'부드러운 레이트 + 촘촘한 필터링, 엑셀로 정리된 랩타임 기록.'},
-  LTGR:{emoji:'🧘',name:'데이터 수도승',
-    desc:'완벽한 라인, 완벽한 세팅, 완벽한 반복훈련. 다만 이 모든 걸 아무도 모르게 혼자 해낸다. 대회 날 갑자기 나타나 조용히 우승하고 사라진다.',
-    tip:'몇 달간 다듬은 필터 값, 남한테는 절대 안 알려줌.'},
-  LTSQ:{emoji:'🛠️',name:'크리에이티브 엔지니어',
-    desc:'정밀한 라인 컨트롤에 튜닝 실력까지 갖췄지만, 정작 매번 새로운 시도를 즐긴다. 스쿼드 사람들과 새 부품이나 세팅을 같이 테스트하는 걸 좋아한다.',
-    tip:'실험적인 믹서 설정, 매주 바뀌는 나만의 베타 버전.'},
-  LTSR:{emoji:'💻',name:'은둔 개발자',
-    desc:'라인도 세팅도 완벽하게 정교하지만, 늘 새로운 걸 혼자 시도한다. 커스텀 펌웨어나 특이한 프레임 조합을 조용히 테스트하는 타입. 커뮤니티에 가끔 나타나 엄청난 팁을 던지고 사라진다.',
-    tip:'아무도 안 써본 조합, 혼자만의 연구실.'},
-  LFGQ:{emoji:'🧰',name:'성실한 살림꾼',
-    desc:'정교하게 날고, 세팅은 감으로 맞추고, 반복 연습을 꾸준히 하되 늘 스쿼드와 함께. 기체 정비부터 배터리 관리까지 팀에서 제일 꼼꼼하게 챙기는 사람.',
-    tip:'안정적인 미드레이트, 배터리는 항상 로테이션 관리.'},
-  LFGR:{emoji:'📚',name:'묵묵한 연습벌레',
-    desc:'정교한 라인을 감각으로 다듬으며 혼자 꾸준히 반복한다. 화려하진 않지만 어느새 제일 안정적인 랩타임을 찍는 사람. 묵묵히 실력이 느는 스타일.',
-    tip:'무난하지만 손에 익은 세팅, 바꿀 이유가 없다.'},
-  LFSQ:{emoji:'🌸',name:'힐링 비행러',
-    desc:'정교하고 부드러운 라인을, 감각적으로, 매번 다르게, 사람들과 함께 즐긴다. 랩타임보다 다 같이 예쁜 라인 만들고 이야기 나누는 시간을 더 소중히 여긴다.',
-    tip:'부드러운 필터에 편안한 레이트, 스트레스 없는 비행이 목표.'},
-  LFSR:{emoji:'🌌',name:'고요한 방랑자',
-    desc:'부드럽고 정교한 라인을 감각적으로, 매번 다르게, 혼자서 즐긴다. 아무도 없는 시간에 나가 자연과 함께 나는 걸 가장 좋아하는, 가장 여유로운 파일럿.',
-    tip:'편안한 세팅, 정해진 것 없이 그날의 바람 따라.'},
+const AXES = {
+  AL: { name:'공격성', color:'var(--magenta)', hex:'#ff3d6e',
+        A:{letter:'A', name:'어택 Attack', short:'공격적인',
+           desc:'애매한 순간에도 추월을 시도하고, 위험을 감수해서라도 앞으로 나아갑니다. 완벽한 랩보다 승부처를 만드는 그 순간을 즐깁니다.'},
+        B:{letter:'L', name:'라인 Line', short:'정교한',
+           desc:'무리한 추월보다 깨끗한 라인을 우선합니다. 손해를 보더라도 다음 기회, 완벽한 진입 타이밍을 기다리는 편입니다.'} },
+  TF: { name:'세팅', color:'var(--cyan)', hex:'#3de8ff',
+        A:{letter:'T', name:'튜너 Tuner', short:'세팅파',
+           desc:'PID, 레이트, 블랙박스 로그로 원인을 찾고 수치로 세팅을 잡아갑니다. 재현 가능한 좋은 세팅을 신뢰합니다.'},
+        B:{letter:'F', name:'필 Feel', short:'감각파',
+           desc:'숫자보다 손끝의 감각을 믿습니다. 일단 날려보고, 몸에 맞는 느낌으로 세팅을 완성해 갑니다.'} },
+  GS: { name:'연습 스타일', color:'var(--lime)', hex:'#c6ff3d',
+        A:{letter:'G', name:'그라인더 Grinder', short:'그라인더',
+           desc:'같은 구간을 몇 시간이고 반복하며 랩타임을 깎아내는 데서 성취감을 느낍니다. 목표는 명확히 기록입니다.'},
+        B:{letter:'S', name:'스타일 Style', short:'스타일리시한',
+           desc:'반복보다 다양한 시도와 멋진 장면을 즐깁니다. 기록보다 그 순간의 재미와 트릭이 우선입니다.'} },
+  QR: { name:'팀 성향', color:'var(--yellow)', hex:'#ffd23d',
+        A:{letter:'Q', name:'스쿼드 Squad', short:'스쿼드형',
+           desc:'세팅도 공유하고, 연습도 대회 준비도 함께할 때 힘이 나는 타입입니다. 같이 날 때가 가장 즐겁습니다.'},
+        B:{letter:'R', name:'러너 Runner', short:'솔로 러너',
+           desc:'혼자 몰입할 때 가장 즐겁습니다. 세팅도, 연습도, 대회 준비도 스스로 해내는 편입니다.'} },
+  OH: { name:'트랙 취향', color:'var(--purple)', hex:'#b968ff',
+        A:{letter:'O', name:'오픈 Open', short:'오픈 트랙파',
+           desc:'긴 직선과 풀스로틀 구간, 최고속도를 뽐낼 수 있는 넓은 트랙을 가장 좋아합니다.'},
+        B:{letter:'H', name:'하드 Hard', short:'테크니컬파',
+           desc:'연속 게이트와 극한의 컨트롤이 필요한 빡센 기술 코스에서 진짜 실력이 드러난다고 믿습니다.'} }
 };
 
-// ---------- 상태 ----------
+const AXIS_ORDER = ['AL','TF','GS','QR','OH'];
+
+function opt(text, score){ return {text, score}; }
+
+const QUESTIONS = [
+  // AL — 7
+  {axis:'AL', type:'scale', text:'앞차와의 거리가 애매할 때 나는...', options:[
+    opt('매우 무리해서라도 추월한다.',2), opt('조금 공격적으로 추월한다.',1), opt('상황을 본다.',0),
+    opt('다음 기회를 기다린다.',-1), opt('완벽한 라인을 만든 후 추월한다.',-2)]},
+  {axis:'AL', type:'binary', text:'첫 비행에서 가장 먼저 하는 것은?', options:[
+    opt('한계 속도를 확인한다.',2), opt('코스를 익힌다.',-2)]},
+  {axis:'AL', type:'scale', text:'게이트 진입이 살짝 틀어졌다면?', options:[
+    opt('그대로 밀어붙인다.',2), opt('최대한 살린다.',1), opt('상황에 따라 다르다.',0),
+    opt('손해를 감수한다.',-1), opt('라인을 다시 만든다.',-2)]},
+  {axis:'AL', type:'binary', text:'더 재미있는 것은?', options:[
+    opt('최고속도',2), opt('완벽한 라인',-2)]},
+  {axis:'AL', type:'scale', text:'랩타임이 안 나오면', options:[
+    opt('더 공격적으로 탄다.',2), opt('조금 더 공격한다.',1), opt('그대로 유지',0),
+    opt('조금 더 안정적으로 탄다.',-1), opt('완전히 라인을 바꾼다.',-2)]},
+  {axis:'AL', type:'binary', text:'결승 마지막 랩', options:[
+    opt('승부수를 던진다.',2), opt('실수를 줄인다.',-2)]},
+  {axis:'AL', type:'scale', text:'추월할 확률이 50%라면?', options:[
+    opt('무조건 시도',2), opt('웬만하면 시도',1), opt('고민',0),
+    opt('웬만하면 안 한다.',-1), opt('절대 안 한다.',-2)]},
+
+  // TF — 7
+  {axis:'TF', type:'scale', text:'새 프레임을 조립했다.', options:[
+    opt('PID부터 만진다.',2), opt('조금 세팅한다.',1), opt('그냥 날려본다.',0),
+    opt('느낌을 본다.',-1), opt('아무것도 안 건드린다.',-2)]},
+  {axis:'TF', type:'binary', text:'비행이 이상하다.', options:[
+    opt('블랙박스부터 확인',2), opt('몇 팩 더 날린다.',-2)]},
+  {axis:'TF', type:'scale', text:'레이트를 바꿀 때', options:[
+    opt('계산한다.',2), opt('숫자를 참고한다.',1), opt('둘 다',0),
+    opt('느낌을 믿는다.',-1), opt('감으로만 바꾼다.',-2)]},
+  {axis:'TF', type:'binary', text:'좋은 세팅이란', options:[
+    opt('누구나 재현 가능',2), opt('내 손에 맞는 것',-2)]},
+  {axis:'TF', type:'scale', text:'누군가 좋은 PID를 알려줬다.', options:[
+    opt('그대로 테스트',2), opt('비교 테스트',1), opt('참고만',0),
+    opt('내 스타일대로 수정',-1), opt('안 쓴다.',-2)]},
+  {axis:'TF', type:'binary', text:'세팅이 좋아졌다면', options:[
+    opt('원인을 분석한다.',2), opt('그냥 만족한다.',-2)]},
+  {axis:'TF', type:'scale', text:'대회 전날', options:[
+    opt('세팅 수정',2), opt('조금 수정',1), opt('고민',0),
+    opt('거의 안 건드림',-1), opt('절대 안 건드림',-2)]},
+
+  // GS — 6
+  {axis:'GS', type:'scale', text:'30분 연습 시간이 있다면', options:[
+    opt('한 구간만 계속',2), opt('반복 위주',1), opt('반반',0),
+    opt('다양하게',-1), opt('마음대로',-2)]},
+  {axis:'GS', type:'binary', text:'비행 영상을 보면', options:[
+    opt('실수를 찾는다.',2), opt('멋있는 장면을 본다.',-2)]},
+  {axis:'GS', type:'scale', text:'같은 코스를', options:[
+    opt('몇 시간도 가능',2), opt('오래 가능',1), opt('적당히',0),
+    opt('금방 질림',-1), opt('바로 바꿈',-2)]},
+  {axis:'GS', type:'binary', text:'연습 목표', options:[
+    opt('랩타임',2), opt('재미',-2)]},
+  {axis:'GS', type:'scale', text:'새로운 트릭보다', options:[
+    opt('기본기를 더 연습',2), opt('기본기 위주',1), opt('반반',0),
+    opt('트릭도 연습',-1), opt('트릭이 더 좋다.',-2)]},
+  {axis:'GS', type:'binary', text:'대회가 없더라도', options:[
+    opt('꾸준히 연습',2), opt('기분 날 때만 연습',-2)]},
+
+  // QR — 6
+  {axis:'QR', type:'scale', text:'연습은', options:[
+    opt('항상 같이',2), opt('대부분 같이',1), opt('반반',0),
+    opt('대부분 혼자',-1), opt('항상 혼자',-2)]},
+  {axis:'QR', type:'binary', text:'좋은 세팅을 찾았다.', options:[
+    opt('공유한다.',2), opt('혼자 쓴다.',-2)]},
+  {axis:'QR', type:'scale', text:'충돌 영상을 찍었다.', options:[
+    opt('바로 올린다.',2), opt('친구에게만',1), opt('고민',0),
+    opt('거의 안 올림',-1), opt('절대 안 올림',-2)]},
+  {axis:'QR', type:'binary', text:'새로운 비행 장소를 찾았다.', options:[
+    opt('같이 간다.',2), opt('혼자 간다.',-2)]},
+  {axis:'QR', type:'scale', text:'대회 준비', options:[
+    opt('팀원과 같이',2), opt('대부분 같이',1), opt('반반',0),
+    opt('혼자 준비',-1), opt('완전 혼자',-2)]},
+  {axis:'QR', type:'binary', text:'비행이 가장 즐거운 순간', options:[
+    opt('다 같이 날릴 때',2), opt('혼자 몰입할 때',-2)]},
+
+  // OH — 6
+  {axis:'OH', type:'scale', text:'가장 재미있는 트랙', options:[
+    opt('긴 직선',2), opt('직선이 많음',1), opt('둘 다',0),
+    opt('기술 코스',-1), opt('빡센 기술 코스',-2)]},
+  {axis:'OH', type:'binary', text:'좋아하는 구간', options:[
+    opt('풀스로틀',2), opt('연속 게이트',-2)]},
+  {axis:'OH', type:'scale', text:'더 자신 있는 것은', options:[
+    opt('최고속도',2), opt('속도 유지',1), opt('둘 다',0),
+    opt('정밀한 컨트롤',-1), opt('극한 컨트롤',-2)]},
+  {axis:'OH', type:'binary', text:'연습 장소를 고른다면', options:[
+    opt('넓은 공터',2), opt('장애물이 많은 곳',-2)]},
+  {axis:'OH', type:'scale', text:'가장 짜릿한 순간', options:[
+    opt('최고속도',2), opt('빠른 구간',1), opt('둘 다',0),
+    opt('연속 코너',-1), opt('어려운 구간 클리어',-2)]},
+  {axis:'OH', type:'scale', text:'대회 코스를 선택할 수 있다면', options:[
+    opt('무조건 고속',2), opt('고속 선호',1), opt('상관없음',0),
+    opt('테크니컬 선호',-1), opt('무조건 테크니컬',-2)]},
+];
+
+/* ===================== STATE ===================== */
 let current = 0;
-let scores = {};
-AXES.forEach(a=>{ scores[a.left.letter]=0; scores[a.right.letter]=0; });
+const answers = new Array(QUESTIONS.length).fill(null); // score chosen
+const screen = document.getElementById('screen');
 
-function showView(id){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+/* ===================== RENDER: INTRO ===================== */
+function renderIntro(){
+  screen.innerHTML = `
+    <div class="intro">
+      <div class="sub">FPV RACER PERSONALITY</div>
+      <h1>FPTI</h1>
+      <p>32개의 실전 상황으로 당신의 레이싱 성향을 5개 축으로 진단합니다. 정답은 없습니다 — 트랙 위에서 순간적으로 드는 생각을 고르세요.</p>
+      <div class="axis-legend">
+        ${AXIS_ORDER.map(k=>{
+          const a = AXES[k];
+          return `<div class="row"><span class="swatch" style="background:${a.hex}"></span>
+            <b>${a.A.letter}/${a.B.letter}</b> — ${a.name} (${a.A.name} vs ${a.B.name})</div>`;
+        }).join('')}
+      </div>
+      <button class="btn" id="startBtn">시작하기 ▶</button>
+      <div class="meta-row">
+        <span>Q.TOTAL 32</span>
+        <span>EST. 4–6 MIN</span>
+      </div>
+    </div>
+  `;
+  document.getElementById('startBtn').onclick = ()=>{ current=0; renderQuestion(); };
 }
 
-function startQuiz(){
-  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
-  const cs = document.getElementById('callsign').value.trim();
-  document.getElementById('callsignDisplay').textContent = cs ? cs.toUpperCase() : 'PILOT.UNKNOWN';
-  current = 0;
-  AXES.forEach(a=>{ scores[a.left.letter]=0; scores[a.right.letter]=0; });
-  document.getElementById('hudMode').textContent = 'MODE: ACRO';
-  // 아이폰에서 키보드/자동확대가 닫히는 애니메이션이 끝난 뒤 화면 전환
-  setTimeout(()=>{
-    showView('view-quiz');
-    renderQuestion();
-  }, 60);
+/* ===================== RENDER: TICKS ===================== */
+function renderTicks(){
+  const ticks = QUESTIONS.map((q,i)=>{
+    const color = AXES[q.axis].hex;
+    let cls = 'tick';
+    if(i===current) cls += ' current';
+    else if(answers[i]!==null) cls += ' done';
+    const style = (answers[i]!==null && i!==current) ? `style="--tick-color:${color}"` : '';
+    return `<div class="${cls}" ${style}></div>`;
+  }).join('');
+  return `
+    <div class="telemetry">
+      <div class="ticks">${ticks}</div>
+      <div class="tlabel"><span>Q ${String(current+1).padStart(2,'0')} / ${QUESTIONS.length}</span><span>${AXES[QUESTIONS[current].axis].name.toUpperCase()}</span></div>
+    </div>
+  `;
 }
 
+/* ===================== RENDER: QUESTION ===================== */
 function renderQuestion(){
   const q = QUESTIONS[current];
-  const axis = AXES[q.axis-1];
-  document.getElementById('axisTag').textContent = `AXIS ${q.axis} · ${axis.label}`;
-  document.getElementById('questionText').textContent = q.text;
-  document.getElementById('progressText').textContent = `LAP ${current+1} / ${QUESTIONS.length}`;
+  const axis = AXES[q.axis];
+  screen.style.setProperty('--tag-color', axis.hex);
 
-  const pct = Math.round(100 - (current/QUESTIONS.length)*40); // 16.8V -> 대략적인 방전 연출
-  const volt = (12.6 + (pct/100)*4.2).toFixed(1);
-  document.getElementById('battFill').style.width = pct+'%';
-  document.getElementById('voltText').textContent = volt+'V';
-  document.getElementById('hudLeft').textContent = 'ALT ' + (current*7.2).toFixed(1) + 'm';
-  document.getElementById('hudRight').textContent = 'GPS: ' + (3+current) + ' SATS';
+  screen.innerHTML = `
+    ${renderTicks()}
+    <div class="qtag" style="--tag-color:${axis.hex}">${q.axis} · ${axis.name}</div>
+    <div class="qtext">${q.text}</div>
+    <div class="options">
+      ${q.options.map((o,i)=>`
+        <button class="opt ${answers[current]===o.score?'selected':''}" data-i="${i}">
+          <span class="idx">${i+1}</span><span>${o.text}</span>
+        </button>`).join('')}
+    </div>
+    <div class="qfoot">
+      <button class="link-btn" id="prevBtn" ${current===0?'disabled':''}>◀ 이전</button>
+      <button class="link-btn" id="skipBtn">건너뛰기 (중립)</button>
+    </div>
+  `;
 
-  const wrap = document.getElementById('optionsWrap');
-  wrap.innerHTML = '';
-  const opts = [ {letter:axis.left.letter, text:q.a}, {letter:axis.right.letter, text:q.b} ];
-  opts.forEach(o=>{
-    const div = document.createElement('div');
-    div.className = 'opt';
-    div.innerHTML = `<span class="tag">${o.letter})</span><span>${o.text}</span>`;
-    div.onclick = ()=> answer(o.letter);
-    wrap.appendChild(div);
-  });
-}
-
-function answer(letter){
-  scores[letter] += 1;
-  current += 1;
-  if(current < QUESTIONS.length){
-    renderQuestion();
-  } else {
-    finishQuiz();
-  }
-}
-
-function finishQuiz(){
-  let code = '';
-  let barsData = [];
-  AXES.forEach(a=>{
-    const l = scores[a.left.letter], r = scores[a.right.letter];
-    const winner = l >= r ? a.left.letter : a.right.letter;
-    code += winner;
-    const total = l+r || 1;
-    barsData.push({
-      label:a.label,
-      leftName:a.left.name, rightName:a.right.name,
-      leftPct: Math.round(l/total*100)
-    });
+  document.querySelectorAll('.opt').forEach(btn=>{
+    btn.onclick = ()=>{
+      const i = parseInt(btn.dataset.i,10);
+      answers[current] = q.options[i].score;
+      document.querySelectorAll('.opt').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      setTimeout(()=>{
+        if(current < QUESTIONS.length-1){ current++; renderQuestion(); }
+        else { renderResult(); }
+      }, 240);
+    };
   });
 
-  const t = TYPES[code];
-  document.getElementById('resultEmoji').textContent = t.emoji;
-  document.getElementById('resultName').textContent = t.name;
-  document.getElementById('resultDesc').textContent = t.desc;
-  document.getElementById('resultTip').textContent = '▸ ' + t.tip;
-
-  const codeRow = document.getElementById('codeRow');
-  codeRow.innerHTML = '';
-  code.split('').forEach((ch,i)=>{
-    const span = document.createElement('span');
-    span.className = 'code-letter';
-    span.textContent = ch;
-    span.style.animationDelay = (i*0.15)+'s';
-    codeRow.appendChild(span);
-  });
-
-  const barsWrap = document.getElementById('barsWrap');
-  barsWrap.innerHTML = '';
-  barsData.forEach(b=>{
-    const row = document.createElement('div');
-    row.className = 'bar-row';
-    row.innerHTML = `
-      <div class="bar-labels"><span>${b.leftName}</span><span>${b.label}</span><span>${b.rightName}</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${b.leftPct}%"></div></div>
-    `;
-    barsWrap.appendChild(row);
-  });
-
-  document.getElementById('hudMode').textContent = 'MODE: RESULT';
-  document.getElementById('battFill').style.width = '60%';
-  document.getElementById('voltText').textContent = '15.0V';
-  showView('view-result');
+  document.getElementById('prevBtn').onclick = ()=>{
+    if(current>0){ current--; renderQuestion(); }
+  };
+  document.getElementById('skipBtn').onclick = ()=>{
+    answers[current] = 0;
+    if(current < QUESTIONS.length-1){ current++; renderQuestion(); }
+    else { renderResult(); }
+  };
 }
 
-function restartQuiz(){
-  showView('view-intro');
+/* ===================== SCORING ===================== */
+function computeScores(){
+  const raw = {AL:0, TF:0, GS:0, QR:0, OH:0};
+  const max = {AL:0, TF:0, GS:0, QR:0, OH:0};
+  QUESTIONS.forEach((q,i)=>{
+    raw[q.axis] += (answers[i]||0);
+    max[q.axis] += 2;
+  });
+  const result = {};
+  AXIS_ORDER.forEach(k=>{
+    const pct = ((raw[k]/max[k]) + 1) / 2 * 100; // 0~100, 100 = full pole A
+    const letter = pct>=50 ? AXES[k].A.letter : AXES[k].B.letter;
+    result[k] = {raw:raw[k], max:max[k], pct:Math.round(pct), letter};
+  });
+  return result;
 }
+
+/* ===================== RADAR SVG ===================== */
+function radarSVG(scores){
+  const size=280, cx=size/2, cy=size/2, R=104;
+  const n=5;
+  const pts = AXIS_ORDER.map((k,i)=>{
+    const angle = -Math.PI/2 + i*(2*Math.PI/n);
+    const val = scores[k].pct/100;
+    return {
+      x: cx + Math.cos(angle)*R*val,
+      y: cy + Math.sin(angle)*R*val,
+      lx: cx + Math.cos(angle)*(R+26),
+      ly: cy + Math.sin(angle)*(R+26),
+      hex: AXES[k].hex,
+      label: scores[k].letter
+    };
+  });
+  const rings=[0.25,0.5,0.75,1];
+  const ringPolys = rings.map(r=>{
+    const p = Array.from({length:n}).map((_,i)=>{
+      const angle=-Math.PI/2+i*(2*Math.PI/n);
+      return `${cx+Math.cos(angle)*R*r},${cy+Math.sin(angle)*R*r}`;
+    }).join(' ');
+    return `<polygon points="${p}" fill="none" stroke="#28333c" stroke-width="1"/>`;
+  }).join('');
+  const axisLines = Array.from({length:n}).map((_,i)=>{
+    const angle=-Math.PI/2+i*(2*Math.PI/n);
+    return `<line x1="${cx}" y1="${cy}" x2="${cx+Math.cos(angle)*R}" y2="${cy+Math.sin(angle)*R}" stroke="#28333c" stroke-width="1"/>`;
+  }).join('');
+  const dataPoly = pts.map(p=>`${p.x},${p.y}`).join(' ');
+  const dots = pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="4" fill="${p.hex}" />`).join('');
+  const labels = pts.map(p=>`<text x="${p.lx}" y="${p.ly}" fill="${p.hex}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="700" text-anchor="middle" dominant-baseline="middle">${p.label}</text>`).join('');
+
+  return `
+  <svg width="${size}" height="${size+16}" viewBox="0 0 ${size} ${size+16}">
+    <g transform="translate(0,8)">
+      ${ringPolys}
+      ${axisLines}
+      <polygon points="${dataPoly}" fill="rgba(198,255,61,0.14)" stroke="#c6ff3d" stroke-width="2"/>
+      ${dots}
+      ${labels}
+    </g>
+  </svg>`;
+}
+
+/* ===================== RENDER: RESULT ===================== */
+function renderResult(){
+  const scores = computeScores();
+  const code = AXIS_ORDER.map(k=>scores[k].letter).join('');
+
+  const poleOf = (k)=> scores[k].letter===AXES[k].A.letter ? AXES[k].A : AXES[k].B;
+  const P = {}; AXIS_ORDER.forEach(k=> P[k]=poleOf(k));
+
+  const summary = `트랙 위에서는 <b>${P.AL.short}</b> 방식으로 승부를 보고, 세팅은 <b>${P.TF.short}</b>으로 접근합니다. 연습은 <b>${P.GS.short}</b> 스타일이며, <b>${P.QR.short}</b>으로 훈련하고, <b>${P.OH.short}</b> 코스에서 가장 빛을 발합니다.`;
+
+  const axisCardsHTML = AXIS_ORDER.map(k=>{
+    const a = AXES[k]; const s = scores[k]; const p = P[k];
+    const pctFromLeft = s.letter===a.A.letter ? s.pct : 100-s.pct;
+    return `
+    <div class="axis-card">
+      <div class="ac-top"><span>${k} · ${a.name}</span><span>${s.raw>0?'+':''}${s.raw} / ±${s.max}</span></div>
+      <div class="ac-name" style="color:${a.hex}">${p.letter} — ${p.name}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:100%; background:linear-gradient(90deg, ${a.hex}55, ${a.hex}11);"></div>
+        <div class="bar-dot" style="left:${pctFromLeft}%; background:${a.hex};"></div>
+      </div>
+      <div class="ac-poles"><span>${a.A.letter} ${a.A.name.split(' ')[0]}</span><span>${a.B.letter} ${a.B.name.split(' ')[0]}</span></div>
+      <div class="ac-desc">${p.desc}</div>
+    </div>`;
+  }).join('');
+
+  screen.innerHTML = `
+    <div class="result-head">
+      <div class="result-eyebrow">RESULT LOCKED — 진단 완료</div>
+      <div class="code-row">
+        ${AXIS_ORDER.map(k=>`<div class="code-chip" style="background:${AXES[k].hex}">${scores[k].letter}</div>`).join('')}
+      </div>
+      <div class="result-title">${code} 타입</div>
+      <div class="summary">${summary}</div>
+    </div>
+    <div class="radar-wrap">${radarSVG(scores)}</div>
+    <div class="axis-cards">${axisCardsHTML}</div>
+    <div class="btn-row">
+      <button class="btn ghost" id="restartBtn">다시 하기</button>
+      <button class="btn" id="rerunBtn">스크린샷으로 결과 공유 ▶</button>
+    </div>
+    <div class="meta-row">
+      <span>FPTI v1.0</span>
+      <span>#${code} #FPVRACER</span>
+    </div>
+  `;
+
+  document.getElementById('restartBtn').onclick = ()=>{
+    answers.fill(null); current=0; renderIntro();
+  };
+  document.getElementById('rerunBtn').onclick = ()=>{
+    alert('이 화면을 캡처해서 공유해보세요! 📸');
+  };
+}
+
+/* ===================== INIT ===================== */
+renderIntro();
 </script>
-
 </body>
 </html>

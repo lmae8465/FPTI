@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>FPTI — FPV 파일럿 성향 테스트</title>
+<title>FPTI — FPV 드론 레이싱 파일럿 성향 테스트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -297,20 +297,20 @@ function opt(text, score){ return {text, score}; }
 
 const QUESTIONS = [
   // AL — 7
-  {axis:'AL', type:'scale', text:'앞차와의 거리가 애매할 때 나는...', options:[
+  {axis:'AL', type:'scale', text:'앞에 있는 기체의 거리가 애매할 때 나는...', options:[
     opt('매우 무리해서라도 추월한다.',2), opt('조금 공격적으로 추월한다.',1), opt('상황을 본다.',0),
     opt('다음 기회를 기다린다.',-1), opt('완벽한 라인을 만든 후 추월한다.',-2)]},
   {axis:'AL', type:'binary', text:'첫 비행에서 가장 먼저 하는 것은?', options:[
     opt('한계 속도를 확인한다.',2), opt('코스를 익힌다.',-2)]},
   {axis:'AL', type:'scale', text:'게이트 진입이 살짝 틀어졌다면?', options:[
-    opt('그대로 밀어붙인다.',2), opt('최대한 살린다.',1), opt('상황에 따라 다르다.',0),
-    opt('손해를 감수한다.',-1), opt('라인을 다시 만든다.',-2)]},
+    opt('그대로 밀어 넣는다.',2), opt('멈칫 하고 밀어 넣는다.',1), opt('상황에 따라 다르다.',0),
+    opt('손해를 감수하고 돌려서 넣는다.',-1), opt('전 게이트 부터 다시 들어간다.',-2)]},
   {axis:'AL', type:'binary', text:'더 재미있는 것은?', options:[
     opt('최고속도',2), opt('완벽한 라인',-2)]},
   {axis:'AL', type:'scale', text:'랩타임이 안 나오면', options:[
-    opt('더 공격적으로 탄다.',2), opt('조금 더 공격한다.',1), opt('그대로 유지',0),
+    opt('더 공격적으로 날린다.',2), opt('조금 더 공격적으로 날린다.',1), opt('그대로 유지',0),
     opt('조금 더 안정적으로 탄다.',-1), opt('완전히 라인을 바꾼다.',-2)]},
-  {axis:'AL', type:'binary', text:'결승 마지막 랩', options:[
+  {axis:'AL', type:'binary', text:'결승 마지막 랩 1초차이!', options:[
     opt('승부수를 던진다.',2), opt('실수를 줄인다.',-2)]},
   {axis:'AL', type:'scale', text:'추월할 확률이 50%라면?', options:[
     opt('무조건 시도',2), opt('웬만하면 시도',1), opt('고민',0),
@@ -318,10 +318,10 @@ const QUESTIONS = [
 
   // TF — 7
   {axis:'TF', type:'scale', text:'새 프레임을 조립했다.', options:[
-    opt('PID부터 만진다.',2), opt('조금 세팅한다.',1), opt('그냥 날려본다.',0),
+    opt('기본세팅으로 블랙박스 확인',2), opt('전에 있던 세팅을 넣는다.',1), opt('그냥 날려본다.',0),
     opt('느낌을 본다.',-1), opt('아무것도 안 건드린다.',-2)]},
-  {axis:'TF', type:'binary', text:'비행이 이상하다.', options:[
-    opt('블랙박스부터 확인',2), opt('몇 팩 더 날린다.',-2)]},
+  {axis:'TF', type:'binary', text:'첫 팩 비행이 이상하다.', options:[
+    opt('블랙박스부터 확인',2), opt('몇 팩 더 날리고 판단',-2)]},
   {axis:'TF', type:'scale', text:'레이트를 바꿀 때', options:[
     opt('계산한다.',2), opt('숫자를 참고한다.',1), opt('둘 다',0),
     opt('느낌을 믿는다.',-1), opt('감으로만 바꾼다.',-2)]},
@@ -346,10 +346,10 @@ const QUESTIONS = [
     opt('몇 시간도 가능',2), opt('오래 가능',1), opt('적당히',0),
     opt('금방 질림',-1), opt('바로 바꿈',-2)]},
   {axis:'GS', type:'binary', text:'연습 목표', options:[
-    opt('랩타임',2), opt('재미',-2)]},
+    opt('랩타임',2),opt('맛있는 영상',1),opt('무견적!',-1) opt('재미',-2)]},
   {axis:'GS', type:'scale', text:'새로운 트릭보다', options:[
     opt('기본기를 더 연습',2), opt('기본기 위주',1), opt('반반',0),
-    opt('트릭도 연습',-1), opt('트릭이 더 좋다.',-2)]},
+    opt('기술도 연습',-1), opt('기술이 더 좋다.',-2)]},
   {axis:'GS', type:'binary', text:'대회가 없더라도', options:[
     opt('꾸준히 연습',2), opt('기분 날 때만 연습',-2)]},
 
